@@ -1,0 +1,1532 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>자수정 강화소</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Gothic+A1:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#fdfcfb;
+    --ink:#241832;
+    --ink-soft:#5c4b74;
+    --amethyst:#6c3fa8;
+    --surface:#ffffff;
+    --surface-dim:#f1ecf7;
+    --overlay:rgba(20,12,30,.55);
+    --card-shadow:0 22px 60px rgba(40,20,60,.22);
+    --gold:#c97f14;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#140e20; --ink:#f4eefc; --ink-soft:#c6b3e2;
+      --surface:#1f1730; --surface-dim:#271d3a;
+      --overlay:rgba(0,0,0,.6);
+      --card-shadow:0 22px 60px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#140e20; --ink:#f4eefc; --ink-soft:#c6b3e2;
+    --surface:#1f1730; --surface-dim:#271d3a;
+    --overlay:rgba(0,0,0,.6);
+    --card-shadow:0 22px 60px rgba(0,0,0,.5);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    min-height:100dvh;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Gothic A1',sans-serif;
+    display:flex;
+    flex-direction:column;
+    overflow-x:hidden;
+    transition:background-color .5s ease;
+  }
+  button{font-family:inherit;}
+  button:focus-visible{outline:3px solid #e14ec0;outline-offset:3px;}
+
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:16px 18px;
+    position:relative;
+    z-index:10;
+    min-height:30px;
+  }
+  .timerPill{
+    font-family:'Black Han Sans',sans-serif;
+    font-size:15px;
+    background:var(--surface);
+    color:var(--ink);
+    padding:7px 16px;
+    border-radius:999px;
+    box-shadow:0 4px 16px rgba(80,50,120,.15);
+    opacity:0;
+    visibility:hidden;
+    transition:opacity .25s ease;
+  }
+  .timerPill.show{opacity:1;visibility:visible;}
+  .dexBtn{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    background:var(--surface);
+    border:1px solid var(--surface-dim);
+    color:var(--ink);
+    padding:8px 14px;
+    border-radius:999px;
+    font-size:14px;
+    font-weight:700;
+    cursor:pointer;
+    box-shadow:0 2px 10px rgba(80,50,120,.08);
+    transition:transform .15s ease;
+  }
+  .dexBtn:active{transform:scale(.94);}
+  .dexBtn svg{width:16px;height:16px;}
+
+  #stage{
+    flex:1;
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+    overflow:hidden;
+  }
+  #eventLayerBack, #eventLayerFront{
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    overflow:hidden;
+  }
+  #eventLayerBack{z-index:1;}
+  #eventLayerFront{z-index:3;}
+
+  .hypeLayer{
+    position:relative;
+    z-index:2;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:16px;
+    will-change:transform;
+  }
+  .crystalWrap{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+    touch-action:none;
+    -webkit-touch-callout:none;
+    -webkit-user-select:none;
+    user-select:none;
+  }
+  #scoreDisplay{
+    font-family:'Black Han Sans',sans-serif;
+    line-height:1;
+    text-align:center;
+    min-height:1px;
+    opacity:0;
+    transition:opacity .2s ease;
+    font-size:44px;
+    color:var(--amethyst);
+    word-break:keep-all;
+  }
+  #scoreDisplay.show{opacity:1;}
+
+  #crystalBtn{
+    appearance:none;
+    border:none;
+    background:transparent;
+    padding:0;
+    margin:0;
+    cursor:pointer;
+    display:block;
+    line-height:0;
+    transform-origin:50% 60%;
+    transition:transform .09s ease-out;
+  }
+  #crystalBtn.pressed{transform:scale(.9);}
+  #crystalSvgWrap{display:block;}
+  #crystalBtn svg{
+    width:min(52vw,230px);
+    height:auto;
+    display:block;
+    image-rendering:pixelated;
+    filter:drop-shadow(0 0 16px rgba(140,90,200,.45));
+  }
+  #crystalBtn svg.legendarySpin{animation:hueSpin 2.6s linear infinite;}
+  @keyframes hueSpin{
+    0%{filter:hue-rotate(0deg) drop-shadow(0 0 40px rgba(230,160,60,.65));}
+    100%{filter:hue-rotate(360deg) drop-shadow(0 0 40px rgba(230,160,60,.65));}
+  }
+  @keyframes spin360{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+  #crystalBtn.spinOnce{animation:spin360 .8s ease-in-out;}
+  @media (prefers-reduced-motion: reduce){
+    #crystalBtn svg.legendarySpin, #crystalBtn.spinOnce{animation:none;}
+  }
+
+  .sparkle{animation:twinkle 1.9s ease-in-out infinite;}
+  @keyframes twinkle{0%,100%{opacity:.15;}50%{opacity:1;}}
+  @media (prefers-reduced-motion: reduce){ .sparkle{animation:none;opacity:.7;} }
+
+  .instruction{
+    font-size:15px;
+    color:var(--ink-soft);
+    text-align:center;
+    max-width:280px;
+    line-height:1.55;
+    min-height:44px;
+  }
+  .bestScore{font-size:13px;color:var(--ink-soft);opacity:.7;}
+
+  /* ===== 연출 이펙트 ===== */
+  .fx{position:absolute;inset:0;}
+  .fx-wrap{overflow:hidden;}
+  .fx-darken{background:#07040c;opacity:0;animation:feFadeInOut 2.2s ease both;}
+  @keyframes feFadeInOut{0%{opacity:0;}20%{opacity:.6;}80%{opacity:.6;}100%{opacity:0;}}
+  .fx-flash{background:#fff;opacity:0;animation:feFlash .9s ease both;}
+  .fx-flash.slow{animation-duration:2.6s;background:radial-gradient(circle,#fff 0%,#2a1a40 70%);}
+  @keyframes feFlash{0%{opacity:0;}6%{opacity:.9;}14%{opacity:0;}38%{opacity:0;}46%{opacity:.55;}55%{opacity:0;}100%{opacity:0;}}
+  .fx-fire{background:radial-gradient(circle at 50% 100%, rgba(255,120,30,.75), rgba(255,60,10,.35) 45%, transparent 75%);opacity:0;animation:feFadeInOut 2s ease both;}
+  .fx-flood{position:absolute;left:0;right:0;bottom:0;height:0;background:linear-gradient(to top, rgba(30,120,180,.55), rgba(90,190,220,.25));animation:feFlood 2.6s ease both;}
+  @keyframes feFlood{0%{height:0;opacity:0;}25%{opacity:1;}60%{height:72%;opacity:1;}100%{height:0;opacity:0;}}
+
+  .drop{position:absolute;top:-8%;width:2px;height:22px;background:linear-gradient(to bottom, transparent, rgba(110,170,230,.75));animation-name:feFallDown;animation-timing-function:linear;animation-iteration-count:3;}
+  @keyframes feFallDown{0%{transform:translateY(-10%);opacity:.9;}100%{transform:translateY(900%);opacity:.2;}}
+  .snow{position:absolute;top:-6%;width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.9);animation-name:feSnowFall;animation-timing-function:ease-in;animation-iteration-count:2;}
+  @keyframes feSnowFall{0%{transform:translate(0,-10%);opacity:.9;}100%{transform:translate(12px,700%);opacity:.3;}}
+
+  .pulseRing{position:absolute;left:50%;top:44%;width:10px;height:10px;margin:-5px 0 0 -5px;border:3px solid transparent;border-radius:50%;animation:fePulseRing .85s ease-out forwards;}
+  @keyframes fePulseRing{0%{width:10px;height:10px;margin:-5px 0 0 -5px;opacity:.9;}100%{width:360px;height:360px;margin:-180px 0 0 -180px;opacity:0;}}
+
+  .confetti{position:absolute;top:-4%;animation-name:feConfetti;animation-timing-function:linear;animation-fill-mode:forwards;}
+  @keyframes feConfetti{0%{transform:translateY(0) rotate(0deg);opacity:1;}100%{transform:translateY(115vh) rotate(540deg);opacity:.85;}}
+
+  .burstSpark{position:absolute;width:6px;height:6px;border-radius:50%;background:#fff;box-shadow:0 0 10px 3px rgba(255,255,255,.8);animation:feGrowShrink .9s ease both;}
+  @keyframes feGrowShrink{0%{transform:scale(0);opacity:0;}30%{transform:scale(1.6);opacity:1;}100%{transform:scale(0);opacity:0;}}
+
+  .ufo{position:absolute;left:-18%;width:64px;height:24px;animation:feFloatAcross 2.1s linear both;}
+  .ufo::before{content:"";position:absolute;left:8px;top:8px;width:48px;height:12px;background:#5b6b73;border-radius:50%;}
+  .ufo::after{content:"";position:absolute;left:22px;top:0;width:20px;height:12px;background:#9fe6c8;border-radius:50% 50% 0 0;}
+  @keyframes feFloatAcross{0%{transform:translateX(0);}100%{transform:translateX(145vw);}}
+
+  .treeFx{position:absolute;bottom:0;width:10px;height:0;background:#6b4a2b;animation:feTreeGrow 2.4s ease both;}
+  .treeFx::after{content:"";position:absolute;left:50%;bottom:100%;width:70px;height:70px;transform:translateX(-50%) scale(0);background:#3f8a4c;border-radius:50%;animation:feLeafGrow 2.4s ease both;}
+  @keyframes feTreeGrow{0%{height:0;opacity:0;}30%{opacity:1;}60%{height:90px;opacity:1;}100%{height:90px;opacity:0;}}
+  @keyframes feLeafGrow{0%{transform:translateX(-50%) scale(0);opacity:0;}35%{opacity:1;}60%{transform:translateX(-50%) scale(1);opacity:1;}100%{transform:translateX(-50%) scale(1);opacity:0;}}
+
+  .meteor{position:absolute;left:-10%;width:90px;height:4px;background:linear-gradient(to left, #fff, rgba(255,200,120,0));border-radius:4px;animation:feMeteor 1s ease-in both;}
+  @keyframes feMeteor{0%{transform:translate(0,0) rotate(-24deg);opacity:0;}15%{opacity:1;}100%{transform:translate(130vw,80vh) rotate(-24deg);opacity:0;}}
+
+  .earthFx{position:absolute;left:50%;top:45%;width:90px;height:90px;margin:-45px 0 0 -45px;border-radius:50%;background:radial-gradient(circle at 35% 35%, #7fd0e8, #2a6fb0 55%, #163a63 100%);animation:feEarthGone 2.6s ease both;}
+  @keyframes feEarthGone{0%{transform:scale(0) rotate(0deg);opacity:0;}25%{transform:scale(1) rotate(60deg);opacity:1;}70%{transform:scale(1) rotate(260deg);opacity:1;}85%{transform:scale(.05) rotate(340deg);opacity:1;}100%{transform:scale(0) rotate(380deg);opacity:0;}}
+
+  .modalOverlay{
+    position:fixed;inset:0;background:var(--overlay);
+    display:flex;align-items:center;justify-content:center;padding:20px;
+    opacity:0;pointer-events:none;transition:opacity .25s ease;z-index:50;
+  }
+  .modalOverlay.open{opacity:1;pointer-events:auto;}
+  .modalCard{
+    background:var(--surface);border-radius:22px;padding:30px 26px 26px;
+    max-width:380px;width:100%;max-height:86vh;overflow-y:auto;
+    box-shadow:var(--card-shadow);position:relative;text-align:center;
+  }
+  .closeBtn{
+    position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:50%;
+    border:none;background:var(--surface-dim);color:var(--ink);font-size:18px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+
+  #resultCrystalWrap{width:200px;height:auto;margin:6px auto 10px;}
+  #resultCrystalWrap svg{width:100%;height:auto;image-rendering:pixelated;}
+  .scenePanel{border-radius:10px;}
+  .badge{
+    display:inline-block;background:var(--gold);color:#fff;font-weight:700;font-size:12.5px;
+    padding:5px 13px;border-radius:999px;margin-bottom:10px;
+  }
+  #resultName{font-family:'Black Han Sans',sans-serif;font-size:22px;margin:2px 0 10px;line-height:1.35;}
+  #resultScore{font-size:15px;color:var(--ink-soft);margin:0 0 22px;}
+  .modalBtnRow{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+  .btnPrimary{
+    background:var(--amethyst);color:#fff;border:none;padding:12px 22px;border-radius:999px;
+    font-family:'Black Han Sans',sans-serif;font-size:15px;cursor:pointer;
+  }
+  .btnGhost{
+    background:transparent;border:1.5px solid var(--amethyst);color:var(--amethyst);
+    padding:10.5px 18px;border-radius:999px;font-weight:700;font-size:14px;cursor:pointer;
+  }
+
+  #dexModal .modalCard{max-width:520px;text-align:left;}
+  .dexHeader{font-family:'Black Han Sans',sans-serif;font-size:19px;margin:0 30px 4px 0;}
+  .dexSub{font-size:13px;color:var(--ink-soft);margin:0 0 16px;}
+  .dexGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;}
+  .dexCell{
+    background:var(--surface-dim);border-radius:12px;display:flex;flex-direction:column;
+    align-items:center;justify-content:flex-start;padding:8px 4px 7px;text-align:center;
+  }
+  .dexIcon{width:72px;height:72px;display:flex;align-items:center;justify-content:center;}
+  .dexIcon svg{width:100%;height:100%;image-rendering:pixelated;}
+  .dexCell.locked .dexIcon svg{opacity:.3;filter:grayscale(1);}
+  .dexName{font-size:10.5px;line-height:1.25;margin-top:4px;min-height:26px;color:var(--ink);}
+  .dexCell.locked .dexName{color:var(--ink-soft);}
+  .dexNum{font-size:10px;color:var(--ink-soft);margin-top:2px;font-family:'Black Han Sans',sans-serif;}
+
+  @media (max-width:420px){
+    .modalCard{padding:24px 18px 20px;}
+    .dexGrid{grid-template-columns:repeat(auto-fill,minmax(82px,1fr));}
+  }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="timerPill" id="timerPill" aria-hidden="true">0:46</div>
+    <button class="dexBtn" id="openDexBtn" type="button" aria-haspopup="dialog">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M4 5.5C4 4.7 4.7 4 5.5 4H12V20H5.5C4.7 20 4 19.3 4 18.5V5.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M20 5.5C20 4.7 19.3 4 18.5 4H12V20H18.5C19.3 20 20 19.3 20 18.5V5.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+      <span>도감</span>
+    </button>
+  </div>
+
+  <main id="stage">
+    <div id="eventLayerBack" aria-hidden="true"></div>
+    <div class="hypeLayer" id="hypeLayer">
+      <div class="crystalWrap">
+        <div id="scoreDisplay" aria-hidden="true"></div>
+        <button id="crystalBtn" type="button" aria-label="자수정을 길게 눌러 강화하기">
+          <span id="crystalSvgWrap" aria-hidden="true"></span>
+        </button>
+      </div>
+      <p class="instruction" id="instructionText">이미지를 길게 눌러 자수정을 강화해보세요</p>
+      <p class="bestScore" id="bestScoreText"></p>
+    </div>
+    <div id="eventLayerFront" aria-hidden="true"></div>
+  </main>
+
+  <div class="modalOverlay" id="resultModal" role="dialog" aria-modal="true" aria-label="강화 결과">
+    <div class="modalCard">
+      <button class="closeBtn" id="resultCloseBtn" type="button" aria-label="닫기">×</button>
+      <div id="resultBadgeWrap"></div>
+      <div id="resultCrystalWrap"></div>
+      <h2 id="resultName"></h2>
+      <p id="resultScore"></p>
+      <div class="modalBtnRow">
+        <button class="btnGhost" id="resultDexBtn" type="button">도감 보기</button>
+        <button class="btnPrimary" id="resultRetryBtn" type="button">다시 강화하기</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modalOverlay" id="dexModal" role="dialog" aria-modal="true" aria-label="자수정 도감">
+    <div class="modalCard">
+      <button class="closeBtn" id="dexCloseBtn" type="button" aria-label="닫기">×</button>
+      <h2 class="dexHeader">자수정 도감</h2>
+      <p class="dexSub" id="dexCountText">0 / 406 수집</p>
+      <div class="dexGrid" id="dexGrid"></div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============ 406개 이름 (사용자 제공) ============ */
+  var NAMES = ["평범하다 못해 평범한 자수정", "달의 빛을 가득 머금은 자수정", "새벽빛을 품은 자수정", "별가루가 스며든 자수정", "푸른 불꽃을 머금은 자수정", "한밤중의 어둠을 담은 자수정", "아침 햇살에 물든 자수정", "노을을 간직한 자수정", "폭풍우를 견뎌낸 자수정", "천둥의 울림을 품은 자수정", "번개의 섬광을 새긴 자수정", "구름 위에서 떨어진 자수정", "비를 머금고 자란 자수정", "눈보라 속에서 태어난 자수정", "서리꽃이 핀 자수정", "얼어붙은 시간을 품은 자수정", "용암의 열기를 견딘 자수정", "화산재 속에서 발견된 자수정", "불씨가 깃든 자수정", "타오르는 심장을 가진 자수정", "깊은 바다를 닮은 자수정", "해저 동굴에서 나온 자수정", "파도의 기억을 품은 자수정", "산호빛이 비치는 자수정", "심해의 어둠을 담은 자수정", "물방울처럼 맑은 자수정", "강물의 흐름을 새긴 자수정", "폭포의 기운을 머금은 자수정", "숲의 향기를 품은 자수정", "고대 나무 아래에서 자란 자수정", "이끼가 감싼 자수정", "꽃향기가 스며든 자수정", "덩굴 사이에서 발견된 자수정", "나뭇잎의 초록빛을 담은 자수정", "깊은 숲의 속삭임을 품은 자수정", "동굴의 침묵을 머금은 자수정", "지하 깊숙이 묻혀 있던 자수정", "광부가 마지막으로 발견한 자수정", "바위 틈에서 홀로 빛나는 자수정", "천 년 동안 잠들어 있던 자수정", "고대 문명의 흔적을 품은 자수정", "잊힌 왕국에서 발견된 자수정", "왕의 보물창고에 있던 자수정", "여왕의 왕관에서 떨어진 자수정", "전설 속 보물로 알려진 자수정", "신전의 제단을 장식하던 자수정", "사라진 문명의 심장을 닮은 자수정", "봉인된 방에서 발견된 자수정", "고대 마법사가 남긴 자수정", "천상의 사제가 사용했다는 자수정", "별빛을 반사하는 자수정", "은하수를 품은 자수정", "작은 우주가 들어 있는 자수정", "혜성의 꼬리를 닮은 자수정", "유성의 파편으로 만들어진 자수정", "별이 떨어진 자리에 생긴 자수정", "우주의 먼지를 머금은 자수정", "은하의 중심을 닮은 자수정", "태양계의 비밀을 간직한 자수정", "검은 우주를 담아낸 자수정", "태양의 한 조각을 품은 자수정", "햇빛을 먹고 자란 자수정", "일식의 순간을 담은 자수정", "월식의 그림자가 깃든 자수정", "보름달 아래에서 빛난 자수정", "초승달 모양으로 빛나는 자수정", "푸른 달의 축복을 받은 자수정", "붉은 달의 기운을 머금은 자수정", "달빛이 얼어붙은 자수정", "밤하늘의 별자리와 닮은 자수정", "북극성의 힘을 품은 자수정", "혜성보다 빠르게 빛나는 자수정", "별똥별이 되어 떨어진 자수정", "하늘 끝에서 내려온 자수정", "천공의 바람을 머금은 자수정", "구름의 틈에서 발견된 자수정", "하늘을 비추는 거울 같은 자수정", "천상의 정원에서 자란 자수정", "천사의 날개를 닮은 자수정", "신의 시선을 담았다는 자수정", "악마의 불꽃을 품었다는 자수정", "마왕의 왕좌에 박혀 있던 자수정", "마녀의 항아리에서 나온 자수정", "금지된 마법이 깃든 자수정", "봉인된 주문을 담은 자수정", "저주받은 탑에서 발견된 자수정", "마법진이 새겨진 자수정", "주문의 잔향이 남은 자수정", "환상의 세계를 비추는 자수정", "꿈속에서만 존재하는 자수정", "악몽의 흔적을 품은 자수정", "꿈의 파편으로 만들어진 자수정", "현실과 환상의 경계에 있는 자수정", "거울 속 세계에서 건너온 자수정", "다른 차원의 공기를 머금은 자수정", "차원문 근처에서 발견된 자수정", "시간의 틈에서 나온 자수정", "공간을 뒤틀어 버리는 자수정", "세계의 경계를 가르는 자수정", "차원의 끝에서 발견된 자수정", "시간을 거슬러 올라간 자수정", "미래를 비추는 자수정", "과거의 기억을 저장한 자수정", "멈춰 버린 시간을 품은 자수정", "천 년 뒤에도 빛나는 자수정", "아직 오지 않은 날의 자수정", "사라진 시대의 마지막 자수정", "시간여행자가 남긴 자수정", "시계태엽의 힘을 머금은 자수정", "영원의 순간을 담은 자수정", "끝없이 회전하는 자수정", "운명의 실을 품은 자수정", "선택의 순간에 빛나는 자수정", "운명을 거스르는 자수정", "미래의 가능성을 담은 자수정", "수많은 미래를 비추는 자수정", "확률을 뒤흔드는 자수정", "우연을 조종한다는 자수정", "필연의 힘이 깃든 자수정", "운명의 수레바퀴를 닮은 자수정", "용의 심장에서 태어난 자수정", "고대 용이 지키던 자수정", "불을 뿜는 용의 기운을 품은 자수정", "얼음 용의 숨결을 머금은 자수정", "폭풍 용의 비늘을 닮은 자수정", "그림자 용이 남긴 자수정", "황금 용의 보물이었다는 자수정", "하늘을 나는 용의 눈을 닮은 자수정", "잠든 용의 마력을 품은 자수정", "용왕의 보석이라 불리는 자수정", "불사조의 재에서 태어난 자수정", "불사조의 깃털을 품은 자수정", "영원히 타오르는 자수정", "재 속에서 다시 태어난 자수정", "죽음을 거부하는 자수정", "불멸의 불꽃을 간직한 자수정", "신비로운 새의 둥지에서 발견된 자수정", "천상의 새가 물고 온 자수정", "독수리의 눈처럼 날카로운 자수정", "까마귀의 밤을 닮은 자수정", "늑대의 달빛을 품은 자수정", "여우불을 머금은 자수정", "고양이의 눈처럼 빛나는 자수정", "올빼미의 지혜가 깃든 자수정", "뱀의 비늘처럼 반짝이는 자수정", "거미줄처럼 섬세한 자수정", "나비의 날개빛을 담은 자수정", "벌의 황금빛을 머금은 자수정", "개미왕국에서 발견된 자수정", "거대한 곤충의 둥지에 있던 자수정", "바다의 왕이 숨긴 자수정", "해룡의 비늘로 둘러싸인 자수정", "거대한 고래가 삼켰던 자수정", "심해 괴물의 보물인 자수정", "인어의 눈물로 빛나는 자수정", "바다의 노래를 품은 자수정", "조개 속에서 자라난 자수정", "해파리처럼 은은하게 빛나는 자수정", "폭풍의 바다에서 건져 올린 자수정", "침몰한 배의 보물 자수정", "사막의 모래를 머금은 자수정", "사막 한가운데 홀로 빛나는 자수정", "모래폭풍을 견뎌낸 자수정", "오아시스의 생명을 품은 자수정", "사막여우가 지키던 자수정", "고대 피라미드에 숨겨진 자수정", "모래 아래 천 년간 묻힌 자수정", "태양에 달궈진 자수정", "사막의 밤을 담은 자수정", "사막 왕국의 왕관석 자수정", "극지방의 빙하에서 발견된 자수정", "얼음 호수 밑에서 빛나는 자수정", "북풍을 품은 자수정", "눈의 결정이 박힌 자수정", "얼음왕국의 보물 자수정", "빙산의 중심에서 자란 자수정", "영하의 밤을 견딘 자수정", "냉기의 정령이 만든 자수정", "얼음 궁전에서 발견된 자수정", "겨울의 심장을 품은 자수정", "봄의 생명력을 머금은 자수정", "여름의 열정을 담은 자수정", "가을의 낙엽빛을 품은 자수정", "겨울의 고요함을 간직한 자수정", "사계절이 공존하는 자수정", "꽃이 피어나는 자수정", "씨앗의 생명력을 품은 자수정", "거대한 나무의 뿌리에서 발견된 자수정", "숲의 정령이 키운 자수정", "자연의 순수함을 담은 자수정", "대지의 심장이라 불리는 자수정", "산맥의 힘을 품은 자수정", "지진의 흔들림을 견딘 자수정", "깊은 땅속의 압력으로 태어난 자수정", "대륙의 중심에서 나온 자수정", "산 정상에서 발견된 자수정", "절벽 끝에 매달린 자수정", "거대한 바위에 박힌 자수정", "대지의 정령이 만든 자수정", "세계수의 뿌리에서 나온 자수정", "바람의 속삭임을 담은 자수정", "질풍처럼 움직이는 자수정", "폭풍의 눈에서 발견된 자수정", "태풍의 힘을 머금은 자수정", "회오리바람을 가둔 자수정", "산들바람처럼 부드러운 자수정", "하늘을 가르는 바람의 자수정", "바람의 정령이 남긴 자수정", "공기의 흐름을 보여주는 자수정", "무풍지대에서 홀로 흔들리는 자수정", "번개가 직접 내리친 자수정", "천둥번개를 삼킨 자수정", "번개보다 밝게 빛나는 자수정", "전기의 힘을 가득 채운 자수정", "폭뢰의 흔적을 품은 자수정", "하늘의 분노를 담은 자수정", "전광석화처럼 빛나는 자수정", "구름 속에서 번개와 함께 태어난 자수정", "천둥의 심장을 품은 자수정", "벼락맞은 나무에서 발견된 자수정", "불꽃이 춤추는 자수정", "용암처럼 붉게 빛나는 자수정", "화염의 정령이 만든 자수정", "불의 심장에서 태어난 자수정", "태양보다 뜨거운 자수정", "영원한 불씨를 간직한 자수정", "화산 정상에서 발견된 자수정", "마그마 속에서 살아남은 자수정", "지옥불을 견뎌낸 자수정", "불타는 대지를 품은 자수정", "얼음불꽃이 피어난 자수정", "차가운 불길을 품은 자수정", "불과 얼음이 충돌한 자수정", "두 극단의 힘이 공존하는 자수정", "뜨거우면서 차가운 자수정", "냉화의 기운을 머금은 자수정", "서리와 불꽃이 얽힌 자수정", "상반된 원소가 융합된 자수정", "원소의 균형을 이룬 자수정", "모든 원소의 흔적을 품은 자수정", "물의 정령이 축복한 자수정", "불의 정령이 선택한 자수정", "바람의 정령이 감싼 자수정", "대지의 정령이 빚은 자수정", "얼음 정령의 눈물로 만든 자수정", "번개 정령의 핵으로 만들어진 자수정", "빛의 정령이 숨겨둔 자수정", "어둠의 정령이 지키는 자수정", "자연 정령들의 합의로 탄생한 자수정", "원소 정령의 왕이 남긴 자수정", "빛을 흡수하는 자수정", "빛을 두 배로 반사하는 자수정", "눈부신 광휘를 발산하는 자수정", "어둠 속에서만 빛나는 자수정", "태양광을 저장하는 자수정", "달빛을 저장하는 자수정", "별빛을 저장하는 자수정", "빛의 기둥처럼 솟은 자수정", "무지개빛으로 반짝이는 자수정", "일곱 빛깔을 품은 자수정", "그림자를 빨아들이는 자수정", "어둠을 주변에 퍼뜨리는 자수정", "빛이 닿지 않는 자수정", "검은 안개를 머금은 자수정", "밤의 정령이 만든 자수정", "그림자 속에 숨어 있던 자수정", "어둠의 심연에서 나온 자수정", "검은 달을 닮은 자수정", "빛조차 삼켜 버리는 자수정", "끝없는 밤을 품은 자수정", "무지개 끝에서 발견된 자수정", "색이 계속 변하는 자수정", "보는 방향마다 색이 다른 자수정", "일곱 색의 빛을 내뿜는 자수정", "오로라를 담은 자수정", "북극광처럼 흔들리는 자수정", "오색 구름을 품은 자수정", "신비로운 빛깔을 가진 자수정", "색채의 마법이 깃든 자수정", "세상의 모든 색을 담은 자수정", "완벽하게 투명한 자수정", "유리처럼 맑은 자수정", "수정처럼 깨끗한 자수정", "내부가 비어 있는 듯한 자수정", "속에 작은 별이 떠 있는 자수정", "내부에서 빛이 흐르는 자수정", "안쪽에서 무언가 움직이는 자수정", "수많은 결정이 겹쳐진 자수정", "끝없이 자라나는 자수정", "깨져도 다시 붙는 자수정", "절대로 깨지지 않는 자수정", "칼날보다 단단한 자수정", "강철을 뛰어넘는 자수정", "바위를 부술 정도로 단단한 자수정", "압력으로 더욱 강해지는 자수정", "충격을 흡수하는 자수정", "공격을 받아도 빛나는 자수정", "세월에도 닳지 않는 자수정", "영원히 변하지 않는 자수정", "불멸의 결정이라 불리는 자수정", "행운을 가져온다는 자수정", "불운을 쫓아낸다는 자수정", "소원을 들어준다는 자수정", "꿈을 이루어 준다는 자수정", "잃어버린 것을 찾아준다는 자수정", "길을 알려주는 자수정", "위험을 미리 알려주는 자수정", "거짓말을 밝혀내는 자수정", "진실만을 비추는 자수정", "비밀을 지키는 자수정", "잊힌 기억을 깨우는 자수정", "기억을 보존하는 자수정", "지혜를 전해준다는 자수정", "현자의 서재에 있던 자수정", "모든 지식을 담았다는 자수정", "질문에 답하는 자수정", "수수께끼를 좋아하는 자수정", "생각을 읽는다는 자수정", "마음을 안정시키는 자수정", "용기를 북돋는 자수정", "왕국의 국보로 지정된 자수정", "왕실의 보물 중 가장 오래된 자수정", "황제의 홀에 박혀 있던 자수정", "왕좌 아래 숨겨진 자수정", "왕관의 중심에 장식된 자수정", "귀족들이 탐냈던 자수정", "보물 사냥꾼이 평생 찾은 자수정", "도둑이 훔치려다 포기한 자수정", "전설의 던전에서 발견된 자수정", "최종 보스의 방에 놓인 자수정", "던전 가장 깊은 곳의 자수정", "함정으로 둘러싸인 자수정", "수수께끼를 풀어야 얻는 자수정", "열쇠가 되어 주는 자수정", "비밀문을 여는 자수정", "봉인을 해제하는 자수정", "고대 유적의 마지막 열쇠 자수정", "잊힌 지하도시의 중심 자수정", "폐허가 된 성에서 발견된 자수정", "무너진 탑 꼭대기의 자수정", "네더의 열기를 품은 자수정", "네더 요새에서 발견된 자수정", "영혼의 불꽃을 머금은 자수정", "영혼 모래의 기억을 품은 자수정", "네더의 검붉은 하늘을 닮은 자수정", "지옥 깊은 곳에서 태어난 자수정", "용암 호수 밑에 잠든 자수정", "불타는 네더 요새의 보물 자수정", "영혼의 계곡에서 발견된 자수정", "네더의 고대 비밀을 담은 자수정", "엔드의 공허를 품은 자수정", "엔드 도시에서 발견된 자수정", "엔더 드래곤의 흔적을 머금은 자수정", "공허 속에서도 사라지지 않는 자수정", "엔드의 별빛을 담은 자수정", "보라색 공허를 닮은 자수정", "엔더 진주의 힘을 품은 자수정", "차원의 끝에서 살아남은 자수정", "엔드 함선의 보물 자수정", "마지막 차원의 심장을 닮은 자수정", "크리퍼의 폭발에도 멀쩡한 자수정", "좀비 군단 사이에서 발견된 자수정", "스켈레톤이 지키던 자수정", "거미굴 깊숙이 숨겨진 자수정", "엔더맨이 바라보지 못하는 자수정", "마녀의 오두막에 있던 자수정", "약탈자 대장이 숨겨둔 자수정", "고대 수호자가 지키는 자수정", "워든의 울림에 반응하는 자수정", "몹의 기운을 흡수하는 자수정", "경험치를 머금은 자수정", "레벨이 오를수록 빛나는 자수정", "경험치 구슬을 끌어당기는 자수정", "마법 부여의 힘을 품은 자수정", "모든 마법이 깃들 수 있는 자수정", "인챈트 테이블보다 오래된 자수정", "마법책의 주문을 저장하는 자수정", "주문을 복제할 수 있다는 자수정", "마법의 힘이 넘쳐나는 자수정", "한계까지 강화된 자수정", "최후의 순간에 빛나는 자수정", "죽을 때까지 빛을 잃지 않는 자수정", "세상의 끝에서도 남아 있는 자수정", "모든 시대를 살아남은 자수정", "최초의 자수정이라 불리는 자수정", "마지막으로 남은 자수정", "세상에 하나뿐인 자수정", "복제할 수 없는 자수정", "이름조차 잊힌 자수정", "기록에서 지워진 자수정", "존재하지 않는다고 알려진 자수정", "전설로만 전해지는 자수정", "아무도 발견하지 못했던 자수정", "우연히 발견된 기적의 자수정", "운석과 함께 떨어진 자수정", "하늘과 땅 사이에서 태어난 자수정", "세계의 모든 힘이 모인 자수정", "모든 원소를 초월한 자수정", "시간과 공간을 초월한 자수정", "차원과 차원을 연결하는 자수정", "세계를 창조한 힘을 품은 자수정", "세계를 멸망시킬 힘을 가진 자수정", "신조차 탐낸다는 자수정", "모든 자수정의 근원이 되는 자수정", "모든 강화가 끝난 궁극의 자수정", "전설의 끝에서 발견된 마지막 자수정"];
+
+  /* ============ 테마 키워드 → 색상(hue) ============ */
+  var THEME_RULES = [
+    [["새벽빛","아침 햇살","노을","일식","월식","보름달","초승달","태양에","태양보다","햇빛","태양의"], 35, "sky"],
+    [["달의","달빛","달을","붉은 달","푸른 달","검은 달"], 224, "moon"],
+    [["별","은하","우주","혜성","유성","성운","북극성","별똥별","별자리"], 252, "space"],
+    [["무지개","오로라","북극광","색채","일곱 빛깔","일곱 색","오색","방향마다 색"], 305, "rainbow"],
+    [["번개","전기","폭뢰","벼락","전광석화","천둥"], 50, "storm"],
+    [["폭풍","태풍","회오리","바람","질풍","산들바람","무풍"], 168, "wind"],
+    [["눈보라","서리","얼음","빙하","냉기","영하","빙산","눈의 결정","얼음왕국","북풍","극지방","냉화"], 193, "ice"],
+    [["용암","화산","마그마","지옥불","불타는","불씨","불꽃","타오르","불멸의 불꽃","영원한 불씨","화염","불의 심장","불길"], 14, "fire"],
+    [["불사조","재 속","깃털을 품"], 24, "phoenix"],
+    [["바다","파도","산호","해저","심해","해룡","고래","인어","조개","해파리","침몰한"], 198, "sea"],
+    [["강물","폭포","물방울","물의"], 188, "river"],
+    [["숲","나무","이끼","꽃","덩굴","나뭇잎","씨앗","자연의","세계수","봄의","여름의","가을의","겨울의","사계절","자라나는","자라난"], 128, "forest"],
+    [["대지","산맥","지진","대륙","절벽","바위","산 정상","땅속"], 28, "earth"],
+    [["동굴","지하 깊","광부"], 22, "cave"],
+    [["고대","문명","유적","잊힌","천 년","봉인","신전","폐허","무너진"], 40, "ancient"],
+    [["왕국","여왕","황제","귀족","보물","국보","왕관","왕좌","왕실","왕의"], 44, "royal"],
+    [["마법","마녀","마왕","악마","천사","신의","저주","주문","금지된","인챈트","부여","마법책"], 280, "arcane"],
+    [["꿈","환상","거울","악몽"], 250, "dream"],
+    [["차원","시간","운명","미래","과거","확률","우연","필연","시계태엽","영원"], 265, "fate"],
+    [["용의","용이","드래곤","용왕"], 8, "dragon"],
+    [["늑대","여우","고양이","올빼미","뱀의","거미줄","나비","벌의","까마귀","독수리","개미","곤충"], 95, "animal"],
+    [["사막","모래","오아시스","피라미드"], 38, "desert"],
+    [["빛을","광휘","빛의","태양광","달빛을 저장","별빛을 저장","빛이 닿지"], 50, "light"],
+    [["그림자","어둠","밤의","검은","안개","죽음"], 268, "dark"],
+    [["투명한","유리처럼","수정처럼","내부가","내부에서","비어 있는","결정이 겹쳐","안쪽에서"], 190, "clarity"],
+    [["단단한","강철을","충격을","세월에도","깨지지 않는","부술 정도","변하지 않는","닳지 않는"], 0, "hard"],
+    [["행운","불운","소원","꿈을 이루","잃어버린 것","길을 알려","위험을 미리","거짓말","진실만","비밀을","잊힌 기억","기억을 보존","지혜","현자","질문에","수수께끼","생각을 읽","마음을 안정","용기를","지식"], 320, "fortune"],
+    [["던전","보스","함정","열쇠","비밀문","유적의 마지막","도둑이"], 355, "dungeon"],
+    [["네더","영혼","지옥"], 8, "nether"],
+    [["엔드","엔더","공허"], 288, "end"],
+    [["크리퍼","좀비","스켈레톤","거미굴","약탈자","수호자","워든","몹의"], 100, "mob"],
+    [["경험치","레벨이","마법의 힘이 넘쳐"], 150, "enchant2"],
+    [["정령","원소"], 260, "spirit"],
+    [["구름","하늘","천상"], 42, "cloud"],
+    [["비를","빗"], 188, "river"]
+  ];
+
+  var GRP_LIGHT_DELTA = {
+    dark:-14, nether:-16, end:-14, mob:-10, hard:-8,
+    light:10, sky:8, cloud:6, moon:6, ice:10, clarity:8, rainbow:6,
+    fire:-4, phoenix:-2, space:-4, dream:-4, arcane:-2
+  };
+
+  var COLOR_OVERRIDES = [
+    ["푸른 불꽃을 머금은", 196, -2, "bluefire"],
+    ["검은 우주를 담아낸", 258, -20, "space"],
+    ["푸른 달의 축복을 받은", 205, 2, "moon"],
+    ["붉은 달의 기운을 머금은", 356, -6, "moon"],
+    ["황금 용의 보물이었다는", 46, 2, "dragon"],
+    ["벌의 황금빛을 머금은", 46, 4, "animal"],
+    ["검은 안개를 머금은", 270, -18, "dark"],
+    ["검은 달을 닮은", 250, -20, "moon"],
+    ["네더의 검붉은 하늘을 닮은", 356, -16, "nether"]
+  ];
+
+  function themeFor(name, idx){
+    for (var o=0;o<COLOR_OVERRIDES.length;o++){
+      if (name.indexOf(COLOR_OVERRIDES[o][0]) !== -1){
+        return {hue: COLOR_OVERRIDES[o][1], delta: COLOR_OVERRIDES[o][2], grp: COLOR_OVERRIDES[o][3]};
+      }
+    }
+    for (var i=0;i<THEME_RULES.length;i++){
+      var kws = THEME_RULES[i][0];
+      for (var j=0;j<kws.length;j++){
+        if (name.indexOf(kws[j]) !== -1){
+          var grp = THEME_RULES[i][2];
+          return {hue: THEME_RULES[i][1], delta: GRP_LIGHT_DELTA[grp]||0, grp: grp};
+        }
+      }
+    }
+    return {hue: 266 + (idx/405)*18, delta:0, grp:"none"};
+  }
+
+  var TOTAL = NAMES.length; // 406
+
+  /* ============ 픽셀 이미지 엔진 v3 (자수정 + 이름별 풍경) ============ */
+  var GW = 40, GH = 40, PX = 5;
+
+  function seededRand(seed){
+    var s = (seed % 2147483647);
+    if (s<=0) s += 2147483646;
+    return function(){
+      s = (s * 16807) % 2147483647;
+      return (s - 1) / 2147483646;
+    };
+  }
+  function hsl(h,s,l){ return "hsl("+Math.round(h)+" "+Math.round(s)+"% "+Math.round(l)+"%)"; }
+  function setC(G,x,y,c){ x=Math.floor(x); y=Math.floor(y); if (x>=0&&x<GW&&y>=0&&y<GH) G[y][x]=c; }
+  function disc(G,cx,cy,r,c){
+    for (var y=Math.floor(cy-r-1); y<=cy+r+1; y++) for (var x=Math.floor(cx-r-1); x<=cx+r+1; x++){
+      var dx=x+0.5-cx, dy=y+0.5-cy;
+      if (dx*dx+dy*dy<=r*r) setC(G,x,y,c);
+    }
+  }
+  function ringC(G,cx,cy,r,c,th,maxY){
+    for (var y=0;y<GH;y++){
+      if (maxY!==undefined && y>maxY) break;
+      for (var x=0;x<GW;x++){
+        var dx=x+0.5-cx, dy=y+0.5-cy;
+        if (Math.abs(Math.sqrt(dx*dx+dy*dy)-r)<=th) setC(G,x,y,c);
+      }
+    }
+  }
+  function lineC(G,x0,y0,x1,y1,c){
+    x0=Math.round(x0);y0=Math.round(y0);x1=Math.round(x1);y1=Math.round(y1);
+    var dx=Math.abs(x1-x0), dy=-Math.abs(y1-y0), sx=x0<x1?1:-1, sy=y0<y1?1:-1, err=dx+dy;
+    for (var n=0;n<200;n++){
+      setC(G,x0,y0,c);
+      if (x0===x1 && y0===y1) break;
+      var e2=2*err;
+      if (e2>=dy){ err+=dy; x0+=sx; }
+      if (e2<=dx){ err+=dx; y0+=sy; }
+    }
+  }
+  function polyC(G,pts,c){
+    var minY=GH,maxY=0,minX=GW,maxX=0,i;
+    for (i=0;i<pts.length;i++){ minY=Math.min(minY,pts[i][1]); maxY=Math.max(maxY,pts[i][1]); minX=Math.min(minX,pts[i][0]); maxX=Math.max(maxX,pts[i][0]); }
+    for (var y=Math.floor(minY); y<=maxY; y++) for (var x=Math.floor(minX); x<=maxX; x++){
+      var px=x+0.5, py=y+0.5, inside=false;
+      for (var a=0,b=pts.length-1;a<pts.length;b=a++){
+        var xi=pts[a][0], yi=pts[a][1], xj=pts[b][0], yj=pts[b][1];
+        if (((yi>py)!==(yj>py)) && (px < (xj-xi)*(py-yi)/(yj-yi)+xi)) inside=!inside;
+      }
+      if (inside) setC(G,x,y,c);
+    }
+  }
+
+  var BG_PAL = {
+    night:[[255,88,40],[295,92,60]], dusk:[[285,75,46],[14,100,62]], dawn:[[200,85,74],[36,100,76]],
+    day:[[205,95,62],[185,90,86]], sea:[[195,95,60],[225,92,42]], deepsea:[[222,92,36],[184,96,54]],
+    fire:[[350,88,42],[30,100,58]], ice:[[188,90,80],[218,88,64]], storm:[[218,70,46],[188,85,64]],
+    forest:[[138,75,48],[96,85,36]], earth:[[24,65,52],[8,72,38]], cave:[[268,50,40],[198,68,52]],
+    desert:[[42,100,68],[24,92,54]], arcane:[[302,88,44],[255,92,60]], ancient:[[40,65,54],[22,75,42]],
+    royal:[[338,80,48],[44,100,54]], void:[[272,88,36],[322,92,52]], rainbow:[[192,92,78],[318,92,80]],
+    light:[[52,100,84],[34,100,66]], nether:[[352,92,38],[20,100,54]], plain:[[278,58,88],[308,62,76]],
+    cosmic:[[288,92,40],[46,100,60]]
+  };
+
+  var BG_RULES = [
+    [["노을"],"dusk"],
+    [["새벽","아침","햇살","햇빛"],"dawn"],
+    [["폭풍","천둥","번개","벼락","폭뢰","전광"],"storm"],
+    [["네더","지옥","영혼"],"nether"],
+    [["엔드","엔더","공허","차원","어둠","그림자","검은","빛조차","끝없는 밤"],"void"],
+    [["일식","월식","달","별","은하","우주","혜성","유성","한밤","밤","북극성","별자리"],"night"],
+    [["눈보라","서리","얼음","빙","냉","영하","극지방","북풍","눈의","겨울"],"ice"],
+    [["용암","화산","마그마","불꽃","불씨","불길","불의","불을","불타","불사조","화염","타오르","뜨거","태양보다"],"fire"],
+    [["심해","해저"],"deepsea"],
+    [["바다","파도","산호","인어","고래","해룡","해파리","조개","침몰","강물","폭포","물방울","물의","비를","빗"],"sea"],
+    [["숲","나무","이끼","꽃","덩굴","잎","씨앗","자연","세계수","봄","여름","가을","사계절","자라"],"forest"],
+    [["사막","모래","오아시스","피라미드"],"desert"],
+    [["던전","보스","함정","폐허","탑","동굴","지하","광부"],"cave"],
+    [["산맥","산 정상","대지","대륙","절벽","바위","지진","땅속"],"earth"],
+    [["왕관","여왕","황제","귀족","보물","국보","왕의","왕실","왕좌","왕국"],"royal"],
+    [["고대","문명","유적","신전","봉인","잊힌"],"ancient"],
+    [["구름","하늘","천상","바람","태풍","회오리","질풍"],"day"],
+    [["무지개","오로라","북극광","색"],"rainbow"],
+    [["광휘","눈부신","태양","빛의 기둥"],"light"],
+    [["마법","주문","마녀","마왕","악마","천사","저주","금지된","인챈트","부여","꿈","환상","거울","악몽","시간","운명","미래","과거","정령","원소","영원","확률","우연","필연"],"arcane"]
+  ];
+
+  var LAYER_RULES = [
+    [["은하","우주","별","혜성","유성","북극성","별자리","엔드","공허"],"stars"],
+    [["달빛","달의","달을","초승달","보름달","월식","푸른 달","붉은 달","검은 달"],"moon"],
+    [["태양","햇살","햇빛","일식","아침","새벽","노을"],"sun"],
+    [["오로라","북극광"],"aurora"],
+    [["무지개","일곱"],"rainbowarc"],
+    [["구름","하늘","천상","질풍","바람","태풍","회오리"],"clouds"],
+    [["광휘","눈부신","태양광","빛의 기둥","빛을 두 배","빛을 흡수"],"rays"],
+    [["시간","시계","영원","과거","미래","멈춰"],"clock"],
+    [["차원","공간","엔드","경계","공허"],"portal"],
+    [["마법","주문","마녀","마법진","봉인","금지된","인챈트","부여","마왕","악마","저주"],"magiccircle"],
+    [["산맥","산 정상","대지","대륙","절벽","바위","지진","화산"],"mountains"],
+    [["고대","신전","유적","왕국","왕좌","제단","잊힌","문명"],"pillars"],
+    [["숲","나무","덩굴","이끼","세계수","꽃","씨앗","자라","봄","여름","가을","사계절","벼락맞은"],"trees"],
+    [["바다","파도","산호","인어","고래","해룡","해파리","조개","침몰","강물","심해","해저","물의"],"waves"],
+    [["사막","모래","오아시스","피라미드"],"dunes"],
+    [["얼음","빙","냉","얼어붙"],"icespike"],
+    [["불꽃","불씨","불길","불의","불을","불타","불사조","화염","용암","마그마","화산","지옥","타오르","뜨거","네더"],"flames"],
+    [["동굴","지하","광부","땅속","던전","폐허","탑"],"stalac"],
+    [["비를","빗","폭풍우","폭포","물방울"],"rain"],
+    [["눈보라","눈의","서리","겨울","영하","북풍","극지방"],"snow"],
+    [["번개","천둥","벼락","전기","폭뢰","전광","폭풍"],"bolt"],
+    [["왕관","여왕","황제","귀족","보물","국보","왕의","왕실"],"crown"],
+    [["용의","용이","드래곤","용왕","황금 용","해룡","천사","날개"],"wings"],
+    [["올빼미","고양이","늑대","여우","뱀","까마귀","독수리","크리퍼","좀비","스켈레톤","거미","워든","엔더맨","몹의","약탈자"],"eyes"],
+    [["운명","확률","우연","필연","선택","행운","불운","소원","지식","지혜","현자","질문","수수께끼","비밀","기억","진실","거짓말"],"runes"],
+    [["꿈","환상","거울","악몽"],"bubbles"],
+    [["영혼"],"souls"],
+    [["경험치","레벨"],"xp"],
+    [["나비","벌","개미","곤충","오아시스","깊은 숲"],"fireflies"]
+  ];
+  var LAYER_Z = ["stars","moon","sun","aurora","rainbowarc","clouds","rays","clock","portal","magiccircle","mountains","pillars","trees","waves","dunes","icespike","flames","stalac","rain","snow","bolt","crown","wings","eyes","runes","bubbles","souls","xp","fireflies"];
+
+  function hasAny(name, kws){
+    for (var i=0;i<kws.length;i++) if (name.indexOf(kws[i])!==-1) return true;
+    return false;
+  }
+
+  function sceneFor(name, i){
+    var bg = null, k;
+    for (k=0;k<BG_RULES.length;k++){ if (hasAny(name, BG_RULES[k][0])){ bg = BG_RULES[k][1]; break; } }
+    if (!bg) bg = i<150 ? "plain" : (i<300 ? "arcane" : "void");
+    var layers = [];
+    for (k=0;k<LAYER_RULES.length && layers.length<3;k++){
+      if (hasAny(name, LAYER_RULES[k][0]) && layers.indexOf(LAYER_RULES[k][1])===-1) layers.push(LAYER_RULES[k][1]);
+    }
+    layers.sort(function(a,b){ return LAYER_Z.indexOf(a)-LAYER_Z.indexOf(b); });
+    return {bg:bg, layers:layers};
+  }
+
+  /* ---- 배경 레이어 ---- */
+  var LAYER_FN = {
+    stars:function(G,r){
+      var cols=["#ffffff","#fff3b0","#cfd8ff"], n=26, i;
+      for (i=0;i<n;i++) setC(G, r()*GW, r()*GH*0.78, cols[Math.floor(r()*3)]);
+      for (i=0;i<4;i++){ var x=2+r()*36, y=2+r()*24; setC(G,x,y,"#fff"); setC(G,x+1,y,"#cfd8ff"); setC(G,x-1,y,"#cfd8ff"); setC(G,x,y+1,"#cfd8ff"); setC(G,x,y-1,"#cfd8ff"); }
+    },
+    moon:function(G,r){
+      var cx = r()<0.5?9:31, cy=9, x, y;
+      for (y=0;y<GH;y++) for (x=0;x<GW;x++){
+        var dx=x+0.5-cx, dy=y+0.5-cy, inA=dx*dx+dy*dy<=25;
+        var ex=x+0.5-(cx+2.6), ey=y+0.5-(cy-1.6), inB=ex*ex+ey*ey<=19;
+        if (inA && !inB) setC(G,x,y,"#f6f1cc");
+      }
+    },
+    sun:function(G,r){
+      var cx=30, cy=10, a;
+      disc(G,cx,cy,6.6,"#ffb02e"); disc(G,cx,cy,5,"#ffd23f"); disc(G,cx-1,cy-1,2.2,"#fff3a6");
+      for (a=0;a<12;a++){ var t=a*Math.PI/6; lineC(G,cx+Math.cos(t)*8.5,cy+Math.sin(t)*8.5,cx+Math.cos(t)*11.5,cy+Math.sin(t)*11.5,"#ffdf6b"); }
+    },
+    aurora:function(G,r){
+      var cols=["#5dffb0","#4ad8ff","#b07bff"], ph=r()*6, b, x, k;
+      for (b=0;b<3;b++) for (x=0;x<GW;x++){
+        var y=5+b*3+Math.round(Math.sin(x*0.22+b*1.3+ph)*2.5);
+        for (k=0;k<3;k++) setC(G,x,y+k,cols[b]);
+      }
+    },
+    rainbowarc:function(G){
+      var cols=["#ff5252","#ff9a2e","#ffd23f","#6fd17f","#4aa8ff","#6a6cff","#b36bff"];
+      for (var k=0;k<7;k++) ringC(G,20,36,17+k*1.05,cols[k],0.55,36);
+    },
+    clouds:function(G,r){
+      var xs=[7,21,33], i, p;
+      for (i=0;i<3;i++){
+        var x=xs[i]+Math.round((r()-0.5)*4), y=6+Math.round(r()*9);
+        for (p=0;p<2;p++){
+          var c = p===0 ? "#cfd8ee" : "#f6f9ff", oy = p===0?1:0;
+          disc(G,x,y+oy,3,c); disc(G,x+4,y+1+oy,2.6,c); disc(G,x-4,y+1+oy,2.2,c);
+        }
+      }
+    },
+    rays:function(G){
+      for (var a=0;a<15;a++){ var t=a*Math.PI/7.5; lineC(G,20+Math.cos(t)*5,20+Math.sin(t)*5,20+Math.cos(t)*30,20+Math.sin(t)*30,"hsl(55 100% 93%)"); }
+    },
+    clock:function(G){
+      ringC(G,20,19,12,"#e0b64a",0.75); ringC(G,20,19,10.2,"#a8832e",0.4);
+      for (var h=0;h<12;h++){ var t=h*Math.PI/6; setC(G,20+Math.sin(t)*8.5,19-Math.cos(t)*8.5,"#ffe9a8"); }
+      lineC(G,20,19,20,12,"#ffe9a8"); lineC(G,20,19,25,21,"#ffe9a8");
+    },
+    portal:function(G){
+      ringC(G,20,19,14,"#b24dff",0.6); ringC(G,20,19,11,"#6a1fb8",0.6); ringC(G,20,19,8,"#e9c8ff",0.55); disc(G,20,19,5.5,"#4a1a9a");
+    },
+    magiccircle:function(G){
+      ringC(G,20,19,14,"#d7b8ff",0.6); ringC(G,20,19,11,"#b58cff",0.5);
+      var pts=[], k;
+      for (k=0;k<6;k++){ var t=k*Math.PI/3-Math.PI/2; pts.push([20+Math.cos(t)*11,19+Math.sin(t)*11]); setC(G,20+Math.cos(t)*14,19+Math.sin(t)*14,"#fff"); }
+      for (k=0;k<6;k++){ var q=pts[k], w=pts[(k+2)%6]; lineC(G,q[0],q[1],w[0],w[1],"#b58cff"); }
+    },
+    mountains:function(G,r){
+      var layer, x;
+      for (layer=0;layer<2;layer++){
+        var y=GH-15+layer*4, col = layer===0 ? "hsl(232 45% 56%)" : "hsl(246 42% 40%)";
+        for (x=0;x<GW;x++){
+          y += Math.round((r()-0.5)*3); y=Math.max(GH-22+layer*3, Math.min(GH-8, y));
+          for (var yy=y; yy<GH; yy++) setC(G,x,yy,col);
+          if (layer===0 && y<GH-17){ setC(G,x,y,"#fff"); setC(G,x,y+1,"#e6ecf5"); }
+        }
+      }
+    },
+    pillars:function(G){
+      var xs=[3,32], i, y, x;
+      for (i=0;i<2;i++){
+        for (y=7;y<GH;y++) for (x=xs[i];x<xs[i]+5;x++){
+          var c = x===xs[i] ? "hsl(38 24% 78%)" : (x===xs[i]+4 ? "hsl(38 20% 52%)" : "hsl(38 22% 66%)");
+          if (x===xs[i]+2 && y%3===0) c="hsl(38 20% 56%)";
+          setC(G,x,y,c);
+        }
+        for (x=xs[i]-1;x<xs[i]+6;x++){ setC(G,x,7,"hsl(38 26% 82%)"); setC(G,x,8,"hsl(38 22% 60%)"); }
+      }
+    },
+    trees:function(G,r){
+      var xs=[5,34,12], hs=[15,13,9], i, k;
+      for (i=0;i<3;i++){
+        var cx=xs[i], base=GH-2, h=hs[i];
+        for (k=0;k<3;k++) setC(G,cx,base-k,"#7a5230"), setC(G,cx+1,base-k,"#5a3a20");
+        for (var t=0;t<3;t++){
+          var tw=5-t, top=base-3-h+Math.round(h*0.35*t)-(2-t)*0;
+          var yb=base-3-t*Math.round(h/3.2);
+          for (var row=0;row<Math.round(h/2.4);row++){
+            var wdt=Math.min(tw+row,6);
+            for (var xx=-wdt;xx<=wdt;xx++) setC(G,cx+xx,yb-Math.round(h/2.4)+row+1,(xx<0?"hsl(128 70% 46%)":"hsl(128 70% 32%)"));
+          }
+        }
+      }
+    },
+    waves:function(G,r){
+      var ph=r()*6, l, x;
+      for (l=0;l<2;l++) for (x=0;x<GW;x++){
+        var y=GH-10+l*3+Math.round(Math.sin(x*0.55+l*1.7+ph)*1.4);
+        for (var yy=y; yy<GH; yy++) setC(G,x,yy,hsl(212,90,50-l*12));
+        setC(G,x,y,"hsl(195 85% 78%)");
+      }
+    },
+    dunes:function(G,r){
+      var ph=r()*6, l, x;
+      for (l=0;l<2;l++) for (x=0;x<GW;x++){
+        var y=GH-9+l*3+Math.round(Math.sin(x*0.28+ph+l*2)*2.5);
+        for (var yy=y; yy<GH; yy++) setC(G,x,yy,l===0?"hsl(38 72% 62%)":"hsl(33 64% 46%)");
+        setC(G,x,y,l===0?"hsl(44 85% 78%)":"hsl(38 72% 62%)");
+      }
+    },
+    icespike:function(G,r){
+      var x=0;
+      while (x<GW){
+        var h=3+Math.floor(r()*9);
+        for (var k=0;k<h;k++){
+          var w=Math.ceil((h-k)/3);
+          for (var d=0;d<w;d++){ setC(G,x+d,GH-1-k,(d===0?"#e6f9ff":"#9fdcf2")); }
+        }
+        x += 2+Math.floor(r()*4);
+      }
+    },
+    flames:function(G,r,spec){
+      var cols = spec.blue ? ["#1c3fb8","#2f7bff","#9fe0ff"] : ["#e8391d","#ff8a1f","#ffe14a"];
+      for (var x=1;x<GW;x+=3){
+        var H=5+Math.floor(r()*9), cx=x+Math.floor(r()*2);
+        for (var k=0;k<H;k++){
+          var wdt = Math.max(0, Math.round((1-k/H)*1.8));
+          var c = k<H*0.35 ? cols[0] : (k<H*0.7 ? cols[1] : cols[2]);
+          for (var d=-wdt; d<=wdt; d++) setC(G,cx+d,GH-1-k,c);
+        }
+      }
+    },
+    stalac:function(G,r){
+      var x=0, k;
+      while (x<GW){
+        var h=3+Math.floor(r()*6);
+        for (k=0;k<h;k++){ var w=Math.ceil((h-k)/3); for (var d=0;d<w;d++) setC(G,x+d,k,d===0?"hsl(266 42% 46%)":"hsl(266 42% 30%)"); }
+        x += 2+Math.floor(r()*4);
+      }
+      x=1;
+      while (x<GW){
+        var h2=2+Math.floor(r()*5);
+        for (k=0;k<h2;k++){ var w2=Math.ceil((h2-k)/3); for (var d2=0;d2<w2;d2++) setC(G,x+d2,GH-1-k,d2===0?"hsl(266 42% 48%)":"hsl(266 42% 32%)"); }
+        x += 3+Math.floor(r()*5);
+      }
+    },
+    rain:function(G,r){
+      for (var i=0;i<24;i++){ var x=r()*GW, y=r()*GH; setC(G,x,y,"hsl(205 85% 80%)"); setC(G,x+1,y+1,"hsl(205 85% 80%)"); setC(G,x+2,y+2,"hsl(205 85% 80%)"); }
+    },
+    snow:function(G,r){
+      for (var i=0;i<32;i++){ var x=r()*GW, y=r()*GH; setC(G,x,y,"#fff"); if (i%5===0){ setC(G,x+1,y,"#fff"); setC(G,x,y+1,"#fff"); setC(G,x+1,y+1,"#fff"); } }
+    },
+    bolt:function(G,r){
+      var x0 = r()<0.5?8:32;
+      var pts=[[x0,1],[x0-3,9],[x0+1,10],[x0-4,21]];
+      for (var k=0;k<pts.length-1;k++){ lineC(G,pts[k][0],pts[k][1],pts[k+1][0],pts[k+1][1],"#ffe14a"); lineC(G,pts[k][0]+1,pts[k][1],pts[k+1][0]+1,pts[k+1][1],"#ffe14a"); }
+      for (k=0;k<pts.length-1;k++) lineC(G,pts[k][0],pts[k][1],pts[k+1][0],pts[k+1][1],"#fffbe0");
+    },
+    crown:function(G){
+      var rows=["a...a...a","aa.aaa.aa","aaaaaaaaa","abbbcbbba","aaaaaaaaa"], pal={a:"#ffcf2e",b:"#c7961a",c:"#ff4d6d"};
+      for (var y=0;y<rows.length;y++) for (var x=0;x<9;x++){ var ch=rows[y].charAt(x); if (pal[ch]) setC(G,15+x,2+y,pal[ch]); }
+    },
+    wings:function(G){
+      var L=[[17,23],[2,7],[5,16],[1,20],[6,24],[2,29],[13,31]];
+      var R=L.map(function(p){ return [40-p[0],p[1]]; });
+      polyC(G,L,"hsl(350 72% 42%)"); polyC(G,R,"hsl(350 72% 42%)");
+      for (var i=0;i<L.length-1;i++){ lineC(G,L[i][0],L[i][1],L[i+1][0],L[i+1][1],"hsl(350 85% 60%)"); lineC(G,R[i][0],R[i][1],R[i+1][0],R[i+1][1],"hsl(350 85% 60%)"); }
+    },
+    eyes:function(G,r,spec){
+      var col = spec.redEyes ? "#ff3b3b" : "#ffe14a";
+      for (var i=0;i<3;i++){ var x=3+Math.floor(r()*30), y=3+Math.floor(r()*18); setC(G,x,y,col); setC(G,x+3,y,col); setC(G,x,y+1,col); setC(G,x+3,y+1,col); }
+    },
+    runes:function(G,r){
+      for (var i=0;i<9;i++){
+        var gx=2+Math.floor(r()*33), gy=2+Math.floor(r()*28);
+        for (var yy=0;yy<4;yy++) for (var xx=0;xx<3;xx++) if (r()<0.55) setC(G,gx+xx,gy+yy,"#e8d8ff");
+      }
+    },
+    bubbles:function(G,r){
+      for (var i=0;i<8;i++) ringC(G,3+r()*34,3+r()*30,1.6+r()*2,"hsl(200 80% 88%)",0.5);
+    },
+    souls:function(G,r){
+      for (var i=0;i<5;i++){
+        var x=4+Math.floor(r()*30), y=5+Math.floor(r()*20);
+        setC(G,x,y,"#9ff8ff"); setC(G,x,y+1,"#9ff8ff"); setC(G,x-1,y+2,"#9ff8ff"); setC(G,x,y+2,"#e8ffff"); setC(G,x+1,y+2,"#9ff8ff"); setC(G,x,y+3,"#9ff8ff");
+      }
+    },
+    xp:function(G,r){
+      for (var i=0;i<10;i++){ var x=3+Math.floor(r()*34), y=3+Math.floor(r()*28); setC(G,x,y,"#fff"); setC(G,x+1,y,"#b6ff3f"); setC(G,x-1,y,"#b6ff3f"); setC(G,x,y+1,"#b6ff3f"); setC(G,x,y-1,"#b6ff3f"); }
+    },
+    fireflies:function(G,r){
+      for (var i=0;i<12;i++){ var x=2+Math.floor(r()*36), y=4+Math.floor(r()*28); setC(G,x,y,"#f8ff7a"); setC(G,x+1,y,"hsl(65 90% 70%)"); setC(G,x,y+1,"hsl(65 90% 70%)"); }
+    }
+  };
+
+  /* ---- 자수정 결정 ---- */
+  var SHAPES = [
+    {mound:false, shards:[{bx:11,by:34,ang:35,len:29,wid:11,shade:0}]},
+    {mound:false, shards:[{bx:20,by:35,ang:8,len:27,wid:12,shade:0}]},
+    {mound:true,  shards:[{bx:17,by:35,ang:-22,len:23,wid:9,shade:-8},{bx:23,by:35,ang:20,len:28,wid:10,shade:0}]},
+    {mound:true,  shards:[{bx:15,by:35,ang:-36,len:21,wid:8,shade:-10},{bx:25,by:35,ang:33,len:22,wid:8,shade:-10},{bx:20,by:36,ang:0,len:29,wid:11,shade:0}]},
+    {mound:true,  shards:[{bx:12,by:35,ang:-58,len:15,wid:7,shade:-14},{bx:28,by:35,ang:58,len:16,wid:7,shade:-14},{bx:15,by:36,ang:-30,len:20,wid:8,shade:-9},{bx:25,by:36,ang:30,len:21,wid:8,shade:-9},{bx:20,by:36,ang:0,len:29,wid:11,shade:0}]},
+    {mound:false, shards:[{bx:20,by:35,ang:10,len:22,wid:17,shade:0}]},
+    {mound:false, shards:[{bx:24,by:36,ang:-14,len:31,wid:7,shade:0}]},
+    {mound:false, shards:[{bx:31,by:35,ang:-22,len:10,wid:5,shade:-10},{bx:8,by:37,ang:-40,len:9,wid:4,shade:-10},{bx:14,by:31,ang:30,len:25,wid:10,shade:0},{bx:32,by:20,ang:50,len:8,wid:4,shade:-6}]}
+  ];
+
+  function drawShard(G, mask, sh, hue, sat, light){
+    var th = sh.ang*Math.PI/180, ax=Math.sin(th), ay=-Math.cos(th), pxv=Math.cos(th), pyv=Math.sin(th);
+    var L = Math.max(10, light+sh.shade);
+    var pal = {
+      edge: hsl(hue, sat, 15),
+      dark: hsl(hue, sat, L-17),
+      mid:  hsl(hue, sat, L),
+      bright: hsl(hue, sat-6, Math.min(88,L+15)),
+      hi: hsl(hue, sat-20, Math.min(96,L+34))
+    };
+    var tipLen = sh.wid*0.95, cells=[], inMask={}, x, y;
+    for (y=0;y<GH;y++) for (x=0;x<GW;x++){
+      var dx=x+0.5-sh.bx, dy=y+0.5-sh.by;
+      var u=dx*ax+dy*ay, v=dx*pxv+dy*pyv;
+      if (u<0 || u>sh.len) continue;
+      var hw = u<sh.len-tipLen ? sh.wid/2 : (sh.wid/2)*(sh.len-u)/tipLen;
+      if (Math.abs(v)>hw) continue;
+      if (u < 0.5*(Math.abs(v)-sh.wid*0.2)) continue;
+      var t = v/(sh.wid/2), c;
+      if (u>sh.len-tipLen) c = v<0 ? pal.bright : pal.mid;
+      else if (t<-0.4) c = pal.mid;
+      else if (t<0.28) c = pal.bright;
+      else c = pal.dark;
+      if (Math.abs(t+0.12)<0.1 && u>sh.len*0.16 && u<sh.len*0.6) c = pal.hi;
+      if (u>sh.len-tipLen*0.8 && u<sh.len-tipLen*0.3 && t>-0.5 && t<-0.15) c = pal.hi;
+      cells.push([x,y,c]); inMask[x+","+y]=true;
+    }
+    for (var i=0;i<cells.length;i++){
+      var cx=cells[i][0], cy=cells[i][1], cc=cells[i][2];
+      if (!inMask[(cx+1)+","+cy] || !inMask[(cx-1)+","+cy] || !inMask[cx+","+(cy+1)] || !inMask[cx+","+(cy-1)]) cc = pal.edge;
+      G[cy][cx] = cc; mask[cx+","+cy] = true;
+    }
+  }
+
+  function drawMound(G){
+    for (var y=32;y<GH;y++) for (var x=3;x<GW-3;x++){
+      var dx=(x+0.5-20)/15, dy=(y+0.5-38)/5.2;
+      if (dx*dx+dy*dy<=1){
+        var c = y<34 ? "hsl(28 26% 52%)" : ((x*7+y*3)%5===0 ? "hsl(28 24% 44%)" : "hsl(28 24% 34%)");
+        if (dx*dx+dy*dy>0.78) c = "hsl(28 26% 22%)";
+        G[y][x]=c;
+      }
+    }
+  }
+
+  function buildGrid(spec, silhouette){
+    var G=[], r, c, mask={};
+    for (r=0;r<GH;r++) G.push(new Array(GW).fill(null));
+    var rand = seededRand((spec.seed||1)*131+7);
+    var withScene = spec.scene!==false && !silhouette;
+    if (withScene){
+      var pal = BG_PAL[spec.bg] || BG_PAL.plain;
+      for (r=0;r<GH;r++){
+        var t=r/(GH-1);
+        var dh=((pal[1][0]-pal[0][0]+540)%360)-180; var hh=(pal[0][0]+dh*t+360)%360, ss=pal[0][1]+(pal[1][1]-pal[0][1])*t, ll=pal[0][2]+(pal[1][2]-pal[0][2])*t;
+        for (c=0;c<GW;c++){
+          var hdx=c+0.5-20, hdy=r+0.5-20, hd=Math.sqrt(hdx*hdx+hdy*hdy);
+          var bonus = hd<9 ? 15 : (hd<13 ? 10 : (hd<17 ? 5 : 0));
+          G[r][c]=hsl(hh, ss, Math.min(95, ll+bonus));
+        }
+      }
+      var accH = (pal[0][0]+170)%360, ai;
+      for (ai=0;ai<18;ai++){
+        var ax=Math.floor(rand()*GW), ay=Math.floor(rand()*GH);
+        var ac = hsl(accH+rand()*40, 100, 70);
+        setC(G,ax,ay,ac);
+        if (ai%4===0){ setC(G,ax+1,ay,ac); setC(G,ax-1,ay,ac); setC(G,ax,ay+1,ac); setC(G,ax,ay-1,ac); }
+      }
+      var ls = spec.layers||[];
+      for (var i=0;i<ls.length;i++) if (LAYER_FN[ls[i]]) LAYER_FN[ls[i]](G, rand, spec);
+      if (!ls.length){ LAYER_FN.stars(G, rand); }
+    }
+    var shape = SHAPES[spec.shape||0];
+    if (shape.mound && !silhouette) drawMound(G);
+    for (var s=0;s<shape.shards.length;s++) drawShard(G, mask, shape.shards[s], spec.hue, spec.sat, spec.light);
+    if (silhouette){
+      for (var a=0;a<GH;a++) for (var b=0;b<GW;b++) if (G[a][b]) G[a][b]="#9d94ab";
+    }
+    return {G:G, mask:mask, rand:rand};
+  }
+
+  function spriteMarkup(spec, silhouette){
+    var built = buildGrid(spec, silhouette), G = built.G, rects = "", r, c;
+    for (r=0;r<GH;r++){
+      c=0;
+      while (c<GW){
+        var col=G[r][c];
+        if (!col){ c++; continue; }
+        var c2=c;
+        while (c2+1<GW && G[r][c2+1]===col) c2++;
+        rects += '<rect x="'+(c*PX)+'" y="'+(r*PX)+'" width="'+((c2-c+1)*PX)+'" height="'+PX+'" fill="'+col+'"/>';
+        c=c2+1;
+      }
+    }
+    var spark = "";
+    if (!silhouette && spec.sparkles>0){
+      var rd = built.rand, placed=0, tries=0;
+      while (placed<spec.sparkles && tries<80){
+        tries++;
+        var gx=Math.floor(4+rd()*32), gy=Math.floor(3+rd()*30);
+        if (!built.mask[gx+","+gy]) continue;
+        placed++;
+        spark += '<rect x="'+(gx*PX)+'" y="'+(gy*PX)+'" width="'+PX+'" height="'+PX+'" fill="#fff" class="sparkle" style="animation-delay:'+(rd()*2).toFixed(2)+'s"/>';
+      }
+    }
+    var scene = spec.scene!==false && !silhouette;
+    var shadow = scene ? "" : '<ellipse cx="100" cy="188" rx="58" ry="6" fill="hsl('+spec.hue+' 25% 8%)" opacity="0.16"/>';
+    return '<svg class="'+(scene?'scenePanel':'')+'" viewBox="0 0 '+(GW*PX)+' '+(GH*PX)+'" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" role="img" aria-hidden="true">'+shadow+rects+spark+'</svg>';
+  }
+
+  function shapeFor(i){
+    var pool = i<80 ? [0,1,6] : (i<200 ? [0,1,2,5,6,7] : (i<330 ? [2,3,5,7,4,1] : [3,4,7,2,5]));
+    return pool[(i*7+3)%pool.length];
+  }
+  var ULT_LAYERS = [
+    ["stars","rays","crown"],["stars","portal","clock"],["stars","aurora","rainbowarc"],["stars","magiccircle","runes"],
+    ["rays","portal","wings"],["stars","rays","clock"],["stars","aurora","magiccircle"],["stars","rays","crown"]
+  ];
+
+  /* ============ 등급 임계값 ============ */
+  var THRESHOLDS = (function(){
+    var arr = [];
+    var prev = -1;
+    var BASE = 1.0525;
+    for (var i=0;i<TOTAL;i++){
+      var v = Math.floor(Math.pow(BASE, i)) - 1;
+      if (v <= prev) v = prev + 1;
+      arr.push(v);
+      prev = v;
+    }
+    arr[arr.length-1] = 1000000000;
+    return arr;
+  })();
+
+  var LEGEND_START = 398; // 상위 8개: 궁극 연출
+
+  var TIERS = (function(){
+    var list = [];
+    for (var i=0;i<NAMES.length;i++){
+      var rarityT = i/(NAMES.length-1);
+      var ultimate = i >= LEGEND_START;
+      var theme = ultimate ? {hue:292, delta:0, grp:"none"} : themeFor(NAMES[i], i);
+      var d = ((theme.hue - 272 + 540) % 360) - 180;
+      d = Math.max(-30, Math.min(30, d));
+      var crystalHue = Math.round(272 + d*0.9);
+      var scene = ultimate ? {bg:"cosmic", layers:ULT_LAYERS[i-LEGEND_START]} : sceneFor(NAMES[i], i);
+      var light = Math.round(50 + rarityT*8 + Math.max(-6, Math.min(6, theme.delta*0.3)));
+      list.push({
+        index: i,
+        name: NAMES[i],
+        threshold: THRESHOLDS[i],
+        hue: crystalHue,
+        sat: Math.round(52 + rarityT*30),
+        light: light,
+        glow: Math.round(3 + rarityT*42),
+        sparkles: Math.round(rarityT*12),
+        seed: i+1,
+        bg: scene.bg,
+        layers: scene.layers,
+        shape: shapeFor(i),
+        blue: NAMES[i].indexOf("푸른 불꽃")!==-1,
+        redEyes: /크리퍼|좀비|스켈레톤|워든|약탈자/.test(NAMES[i]),
+        legendary: ultimate
+      });
+    }
+    return list;
+  })();
+
+  function tierForScore(score){
+    var lo=0, hi=THRESHOLDS.length-1, ans=0;
+    while (lo<=hi){
+      var mid=(lo+hi)>>1;
+      if (THRESHOLDS[mid] <= score){ ans=mid; lo=mid+1; } else { hi=mid-1; }
+    }
+    return ans;
+  }
+
+  /* ============ 저장소 ============ */
+  var LS_DEX = "amethyst_forge_dex_v2";
+  var LS_BEST = "amethyst_forge_best_v2";
+
+  function loadUnlocked(){
+    try{
+      var raw = localStorage.getItem(LS_DEX);
+      if (!raw) return new Set();
+      var arr = JSON.parse(raw);
+      return Array.isArray(arr) ? new Set(arr) : new Set();
+    }catch(e){ return new Set(); }
+  }
+  function saveUnlocked(set){
+    try{ localStorage.setItem(LS_DEX, JSON.stringify(Array.from(set))); }catch(e){}
+  }
+  function loadBest(){
+    try{ return Number(localStorage.getItem(LS_BEST) || 0) || 0; }catch(e){ return 0; }
+  }
+  function saveBest(v){
+    try{ localStorage.setItem(LS_BEST, String(v)); }catch(e){}
+  }
+
+  /* ============ DOM ============ */
+  var stageEl = document.getElementById("stage");
+  var eventBack = document.getElementById("eventLayerBack");
+  var eventFront = document.getElementById("eventLayerFront");
+  var hypeLayer = document.getElementById("hypeLayer");
+  var timerPill = document.getElementById("timerPill");
+  var scoreDisplay = document.getElementById("scoreDisplay");
+  var crystalBtn = document.getElementById("crystalBtn");
+  var crystalSvgWrap = document.getElementById("crystalSvgWrap");
+  var instructionText = document.getElementById("instructionText");
+  var bestScoreText = document.getElementById("bestScoreText");
+
+  var resultModal = document.getElementById("resultModal");
+  var resultCrystalWrap = document.getElementById("resultCrystalWrap");
+  var resultName = document.getElementById("resultName");
+  var resultScore = document.getElementById("resultScore");
+  var resultBadgeWrap = document.getElementById("resultBadgeWrap");
+  var resultCloseBtn = document.getElementById("resultCloseBtn");
+  var resultRetryBtn = document.getElementById("resultRetryBtn");
+  var resultDexBtn = document.getElementById("resultDexBtn");
+
+  var dexModal = document.getElementById("dexModal");
+  var dexGrid = document.getElementById("dexGrid");
+  var dexCountText = document.getElementById("dexCountText");
+  var openDexBtn = document.getElementById("openDexBtn");
+  var dexCloseBtn = document.getElementById("dexCloseBtn");
+
+  var ORIGINAL_INSTRUCTION = instructionText.textContent;
+  var REDUCE_MOTION = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  crystalSvgWrap.innerHTML = spriteMarkup({hue:272, sat:62, light:54, sparkles:4, seed:3, shape:0, scene:false});
+  var crystalSvgEl = crystalSvgWrap.querySelector("svg");
+
+  function refreshBestText(){
+    var best = loadBest();
+    bestScoreText.textContent = best>0 ? ("최고 기록  " + best.toLocaleString("ko-KR")) : "";
+  }
+  refreshBestText();
+
+  /* ============ 게임 상수 ============ */
+  var DURATION = 46;
+  var GROWTH_RATE = 0.38;
+  var SCORE_DECAY = 0.28;
+  var POWER_DECAY = 0.9;
+
+  var state = {
+    phase: "idle",
+    score: 0,
+    holdPower: 1,
+    holding: false,
+    timerStart: null,
+    runLuck: 1
+  };
+  var rafId = null;
+  var lastTime = 0;
+  var eventCaption = "";
+  var eventCaptionUntil = 0;
+
+  /* ============ 분위기 문구 ============ */
+  var HYPE_LEVELS = [
+    {min:0,    hold:"쥐고 있으면 반응이 시작돼요", release:"손을 떼서 기운이 빠져나가요"},
+    {min:0.15, hold:"기운이 차오른다...",         release:"기운이 빠르게 식어간다..."},
+    {min:0.3,  hold:"두근두근... 심상치 않다",     release:"손을 떼자 기운이 흩어진다"},
+    {min:0.45, hold:"빛이 흘러넘친다!",           release:"놓치면 안 돼!"},
+    {min:0.6,  hold:"미쳐 날뛰기 시작한다!!",      release:"버텨야 해!!"},
+    {min:0.75, hold:"제어 불능?!",               release:"지금 놓으면 큰일 난다!"},
+    {min:0.9,  hold:"차원이 흔들린다!!!",         release:"절대 놓지 마!!!"}
+  ];
+  function pickHype(intensity, holding){
+    var chosen = HYPE_LEVELS[0];
+    for (var i=0;i<HYPE_LEVELS.length;i++){
+      if (intensity >= HYPE_LEVELS[i].min) chosen = HYPE_LEVELS[i];
+    }
+    return holding ? chosen.hold : chosen.release;
+  }
+
+  function updateTimerDisplay(remaining){
+    var r = Math.max(0, Math.ceil(remaining));
+    var m = Math.floor(r/60);
+    var s = r % 60;
+    timerPill.textContent = m + ":" + (s<10 ? "0"+s : s);
+  }
+
+  /* ============ 이벤트(연출) 시스템 ============ */
+  function spawnEl(parent, cls){
+    var el = document.createElement("div");
+    el.className = cls;
+    parent.appendChild(el);
+    return el;
+  }
+  function autoRemove(el, ms){
+    setTimeout(function(){ if (el && el.parentNode) el.parentNode.removeChild(el); }, ms);
+  }
+  function setCaption(text, ms){
+    eventCaption = text;
+    eventCaptionUntil = performance.now() + ms;
+  }
+
+  function evDarken(){
+    var el = spawnEl(eventFront, "fx fx-darken");
+    autoRemove(el, 2200);
+  }
+  function evSpin(){
+    crystalBtn.classList.remove("spinOnce");
+    void crystalBtn.offsetWidth;
+    crystalBtn.classList.add("spinOnce");
+    setTimeout(function(){ crystalBtn.classList.remove("spinOnce"); }, 900);
+  }
+  function evRain(hue){
+    var wrap = spawnEl(eventBack, "fx fx-wrap");
+    for (var i=0;i<22;i++){
+      var d = document.createElement("div");
+      d.className = "drop";
+      d.style.left = (Math.random()*100)+"%";
+      d.style.animationDelay = (Math.random()*0.8)+"s";
+      d.style.animationDuration = (0.5+Math.random()*0.4)+"s";
+      wrap.appendChild(d);
+    }
+    autoRemove(wrap, 2400);
+    setCaption("비가 내리기 시작한다", 2000);
+  }
+  function evSnow(){
+    var wrap = spawnEl(eventBack, "fx fx-wrap");
+    for (var i=0;i<18;i++){
+      var d = document.createElement("div");
+      d.className = "snow";
+      d.style.left = (Math.random()*100)+"%";
+      d.style.animationDelay = (Math.random()*1.2)+"s";
+      d.style.animationDuration = (1.6+Math.random()*1.2)+"s";
+      wrap.appendChild(d);
+    }
+    autoRemove(wrap, 2800);
+    setCaption("눈이 흩날린다", 2200);
+  }
+  function evLightning(){
+    var flash = spawnEl(eventFront, "fx fx-flash");
+    autoRemove(flash, 900);
+    setCaption("번개가 내리친다!!", 900);
+  }
+  function evSparkleBurst(){
+    var wrap = spawnEl(eventFront, "fx fx-wrap");
+    for (var i=0;i<16;i++){
+      var d = document.createElement("div");
+      d.className = "burstSpark";
+      d.style.left = (30+Math.random()*40)+"%";
+      d.style.top = (25+Math.random()*40)+"%";
+      d.style.animationDelay = (Math.random()*0.4)+"s";
+      wrap.appendChild(d);
+    }
+    autoRemove(wrap, 1500);
+  }
+  function evFire(){
+    var el = spawnEl(eventFront, "fx fx-fire");
+    autoRemove(el, 2000);
+    setCaption("자수정이 불타오른다!", 1800);
+  }
+  function evFlyAway(){
+    var dir = Math.random()<0.5?-1:1;
+    crystalBtn.style.transition = "transform .6s cubic-bezier(.3,.7,.4,1)";
+    crystalBtn.style.transform = "translate("+(dir*58)+"vw,-46vh) rotate("+(dir*60)+"deg) scale(.5)";
+    setCaption("자수정이 날아간다!", 1300);
+    setTimeout(function(){
+      crystalBtn.style.transition = "transform .5s ease-out";
+      crystalBtn.style.transform = "";
+    }, 650);
+  }
+  function evDisassemble(){
+    var rects = crystalSvgEl.querySelectorAll("rect");
+    rects.forEach(function(r){
+      var dx=(Math.random()*2-1)*70, dy=(Math.random()*2-1)*70, rot=(Math.random()*2-1)*200;
+      r.style.transition = "transform .5s ease-in, opacity .5s ease-in";
+      r.style.transform = "translate("+dx.toFixed(0)+"px,"+dy.toFixed(0)+"px) rotate("+rot.toFixed(0)+"deg)";
+      r.style.opacity = "0.1";
+    });
+    setCaption("자수정이 산산이 흩어진다!", 1200);
+    setTimeout(function(){
+      rects.forEach(function(r){
+        r.style.transition = "transform .6s cubic-bezier(.2,1.4,.4,1), opacity .6s ease-out";
+        r.style.transform = "";
+        r.style.opacity = "1";
+      });
+    }, 650);
+  }
+  function evVanish(){
+    crystalBtn.style.transition = "opacity .45s ease";
+    crystalBtn.style.opacity = "0.04";
+    setCaption("자수정이 사라졌다...?", 1200);
+    setTimeout(function(){ crystalBtn.style.opacity = "1"; }, 700);
+  }
+  function evFlood(){
+    var el = spawnEl(eventFront, "fx fx-flood");
+    autoRemove(el, 2600);
+    setCaption("물이 차오른다...", 2200);
+  }
+  function evAlien(){
+    var wrap = spawnEl(eventBack, "fx fx-wrap");
+    var u = document.createElement("div");
+    u.className = "ufo";
+    u.style.top = (10+Math.random()*18)+"%";
+    wrap.appendChild(u);
+    autoRemove(wrap, 2200);
+    setCaption("외계인이 찾아왔다!", 2000);
+  }
+  function evTree(){
+    var wrap = spawnEl(eventBack, "fx fx-wrap");
+    var t = document.createElement("div");
+    t.className = "treeFx";
+    t.style.left = (Math.random()<0.5 ? "6%" : "86%");
+    wrap.appendChild(t);
+    autoRemove(wrap, 2600);
+    setCaption("나무가 무럭무럭 자란다", 2200);
+  }
+  function evMeteor(){
+    var wrap = spawnEl(eventBack, "fx fx-wrap");
+    var m = document.createElement("div");
+    m.className = "meteor";
+    m.style.top = (Math.random()*30)+"%";
+    wrap.appendChild(m);
+    autoRemove(wrap, 1400);
+    setCaption("유성이 떨어진다!", 1200);
+  }
+  function evEarthGone(){
+    var wrap = spawnEl(eventFront, "fx fx-wrap");
+    var e = document.createElement("div");
+    e.className = "earthFx";
+    wrap.appendChild(e);
+    var flash = spawnEl(eventFront, "fx fx-flash slow");
+    autoRemove(wrap, 2800);
+    autoRemove(flash, 2800);
+    setCaption("지구가... 사라졌다?!", 2600);
+  }
+
+  var EVENTS = [
+    {fn:evDarken,     min:0.12, w:3},
+    {fn:evSpin,       min:0.12, w:3},
+    {fn:evRain,       min:0.2,  w:3},
+    {fn:evSnow,       min:0.25, w:2},
+    {fn:evLightning,  min:0.3,  w:3},
+    {fn:evSparkleBurst,min:0.15,w:3},
+    {fn:evFire,       min:0.4,  w:2},
+    {fn:evFlyAway,    min:0.45, w:2},
+    {fn:evDisassemble,min:0.5,  w:2},
+    {fn:evVanish,     min:0.5,  w:2},
+    {fn:evFlood,      min:0.55, w:2},
+    {fn:evAlien,      min:0.6,  w:2},
+    {fn:evTree,       min:0.35, w:2},
+    {fn:evMeteor,     min:0.3,  w:2},
+    {fn:evEarthGone,  min:0.85, w:1, once:true}
+  ];
+  var earthGoneUsed = false;
+  var lastEventAt = 0;
+  var activeEventCount = 0;
+
+  function maybeTriggerEvent(now, intensity){
+    if (now - lastEventAt < Math.max(140, 700*(1-intensity))) return;
+    var maxConcurrent = 1 + Math.floor(intensity*3);
+    if (activeEventCount >= maxConcurrent) return;
+    var chance = Math.pow(intensity,2) * 0.4;
+    if (Math.random() > chance) return;
+    var pool = [];
+    for (var i=0;i<EVENTS.length;i++){
+      var e = EVENTS[i];
+      if (intensity < e.min) continue;
+      if (e.once && earthGoneUsed) continue;
+      for (var w=0; w<e.w; w++) pool.push(e);
+    }
+    if (pool.length===0) return;
+    var pick = pool[Math.floor(Math.random()*pool.length)];
+    if (pick.once) earthGoneUsed = true;
+    lastEventAt = now;
+    activeEventCount++;
+    setTimeout(function(){ activeEventCount = Math.max(0, activeEventCount-1); }, 1800);
+    pick.fn();
+  }
+
+  /* ============ 메인 비주얼 업데이트 ============ */
+  var lastPulseAt = 0;
+  var lastConfettiAt = 0;
+  function spawnConfetti(hue, intensity){
+    if (eventBack.childElementCount > 70) return;
+    var c = document.createElement("div");
+    c.className = "confetti";
+    var size = 6 + Math.random()*10;
+    c.style.width = size+"px";
+    c.style.height = size+"px";
+    c.style.left = (Math.random()*100)+"%";
+    c.style.background = "hsl(" + ((hue + Math.random()*180)%360).toFixed(0) + ",95%,58%)";
+    c.style.animationDuration = (0.9+Math.random()*0.9)+"s";
+    eventBack.appendChild(c);
+    setTimeout(function(){ if (c.parentNode) c.parentNode.removeChild(c); }, 1900);
+  }
+  function spawnPulseRing(hue){
+    var ring = document.createElement("div");
+    ring.className = "pulseRing";
+    ring.style.borderColor = "hsla(" + hue.toFixed(0) + ",90%,60%,.55)";
+    eventBack.appendChild(ring);
+    setTimeout(function(){ if (ring.parentNode) ring.parentNode.removeChild(ring); }, 900);
+  }
+
+  function updateVisuals(now, timeProgress){
+    var scoreIntensity = Math.min(1, Math.log10(state.score+1) / 6);
+    var intensity = 1 - (1 - 0.92*timeProgress) * (1 - scoreIntensity);
+    var ii = intensity*intensity;
+    var sec = now/1000;
+
+    var hue = (sec * (18 + 270*ii*intensity)) % 360;
+    var hue2 = (hue + 150 + intensity*60) % 360;
+    var hue3 = (hue + 260) % 360;
+    var hue4 = (hue + 70) % 360;
+    var sat = 22 + intensity*78;
+    var lightOuter = 97 - intensity*22;
+    var coreLight = Math.max(58, lightOuter-30-intensity*8);
+
+    var angle = (sec * (24 + 170*ii)) % 360;
+    var angle2 = (360 - (sec * (14 + 55*ii)) % 360);
+    var conicAlpha = Math.min(0.95, ii*1.05);
+    var rayAlpha = Math.min(0.6, ii*0.7);
+    var bx = 50 + Math.cos(sec*0.9)*34*intensity;
+    var by = 44 + Math.sin(sec*1.3)*26*intensity;
+    var blobAlpha = Math.min(0.85, ii*0.95);
+
+    stageEl.style.background =
+      "repeating-conic-gradient(from " + angle2.toFixed(0) + "deg at 50% 44%, " +
+        "hsla(" + hue4.toFixed(0) + ",100%,66%," + rayAlpha.toFixed(2) + ") 0deg 24deg, " +
+        "hsla(" + hue3.toFixed(0) + ",100%,50%,0) 24deg 48deg), " +
+      "radial-gradient(circle at " + bx.toFixed(0) + "% " + by.toFixed(0) + "%, hsla(" + hue3.toFixed(0) + ",100%,60%," + blobAlpha.toFixed(2) + ") 0%, transparent 46%), " +
+      "conic-gradient(from " + angle.toFixed(0) + "deg at 50% 44%, " +
+        "hsla(" + hue.toFixed(0) + ",100%,62%," + conicAlpha.toFixed(2) + ") 0deg, " +
+        "hsla(" + hue2.toFixed(0) + ",100%,64%," + conicAlpha.toFixed(2) + ") 90deg, " +
+        "hsla(" + hue3.toFixed(0) + ",100%,60%," + conicAlpha.toFixed(2) + ") 180deg, " +
+        "hsla(" + hue4.toFixed(0) + ",100%,64%," + conicAlpha.toFixed(2) + ") 270deg, " +
+        "hsla(" + hue.toFixed(0) + ",100%,62%," + conicAlpha.toFixed(2) + ") 360deg), " +
+      "radial-gradient(circle at 50% 42%, hsl(" + hue.toFixed(0) + " " + sat.toFixed(0) + "% " + coreLight.toFixed(0) + "%) 0%, " +
+        "hsl(" + hue2.toFixed(0) + " " + (sat*0.9).toFixed(0) + "% " + lightOuter.toFixed(0) + "%) 55%, " +
+        "var(--bg) 100%)";
+
+    if (!REDUCE_MOTION && intensity>0.28){
+      if (now-lastPulseAt > Math.max(80, 480*(1-intensity))){
+        lastPulseAt = now;
+        spawnPulseRing(hue);
+        if (intensity>0.6) spawnPulseRing(hue3);
+      }
+      if (intensity>0.4 && now-lastConfettiAt > Math.max(60, 300*(1-intensity))){
+        lastConfettiAt = now;
+        spawnConfetti(hue2, intensity);
+      }
+    }
+
+    var scoreText = Math.floor(state.score).toLocaleString("ko-KR");
+    var availW = Math.min(window.innerWidth*0.92, 400);
+    var maxByWidth = availW / (scoreText.length*0.6);
+    var fontSize = Math.max(26, Math.min(38 + intensity*150, maxByWidth));
+    var numHue = (hue+180)%360;
+    scoreDisplay.textContent = scoreText;
+    scoreDisplay.style.fontSize = fontSize.toFixed(0) + "px";
+    scoreDisplay.style.color = "hsl(" + numHue.toFixed(0) + " 95% " + (46+intensity*14).toFixed(0) + "%)";
+    scoreDisplay.style.webkitTextStroke = (intensity>0.25 ? Math.max(2, fontSize*0.035*Math.min(1,intensity*1.4)) : 0).toFixed(1) + "px #fff";
+    scoreDisplay.style.paintOrder = "stroke fill";
+    scoreDisplay.style.textShadow = "0 0 " + (6+intensity*50).toFixed(0) + "px hsla(" + numHue.toFixed(0) + ",95%,62%," + (0.5+intensity*0.48).toFixed(2) + ")";
+
+    var glow = 4 + intensity*46;
+    crystalSvgEl.style.filter = "drop-shadow(0 0 " + glow.toFixed(0) + "px hsla(" + hue.toFixed(0) + ",85%,62%,0.7))";
+
+    if (!REDUCE_MOTION){
+      var amp = ii*16;
+      var dx = (Math.random()*2-1)*amp;
+      var dy = (Math.random()*2-1)*amp*0.6;
+      var rot = (Math.random()*2-1)*intensity*4;
+      hypeLayer.style.transform = "translate(" + dx.toFixed(2) + "px," + dy.toFixed(2) + "px) rotate(" + rot.toFixed(2) + "deg)";
+    }
+
+    if (eventCaption && now < eventCaptionUntil){
+      instructionText.textContent = eventCaption;
+    } else {
+      eventCaption = "";
+      instructionText.textContent = pickHype(intensity, state.holding);
+    }
+    if (intensity>0.45){ instructionText.style.color = "#fff"; instructionText.style.textShadow = "0 2px 8px rgba(0,0,0,.65)"; instructionText.style.fontWeight = "700"; }
+
+    maybeTriggerEvent(now, intensity);
+    return intensity;
+  }
+
+  /* ============ 메인 루프 ============ */
+  function loop(now){
+    if (state.phase !== "enhancing") return;
+    var dt = Math.min(0.1, (now - lastTime) / 1000);
+    lastTime = now;
+
+    var elapsed = (now - state.timerStart) / 1000;
+    var remaining = DURATION - elapsed;
+    updateTimerDisplay(remaining);
+
+    if (remaining <= 0){
+      finalize();
+      return;
+    }
+
+    if (state.holding){
+      state.holdPower *= (1 + dt*GROWTH_RATE);
+      var roll = Math.random();
+      var mult;
+      if (roll > 0.998) mult = 200 + Math.random()*400;
+      else if (roll > 0.98) mult = 30 + Math.random()*100;
+      else if (roll > 0.90) mult = 4 + Math.random()*8;
+      else mult = 0.4 + Math.random()*1.4;
+      state.score += state.holdPower * dt * mult * state.runLuck;
+    } else {
+      state.holdPower *= Math.exp(-POWER_DECAY*dt);
+      state.score = Math.max(0, state.score - state.score*SCORE_DECAY*dt);
+    }
+
+    updateVisuals(now, Math.min(1, elapsed/DURATION));
+
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function onPress(e){
+    if (state.phase === "result") return;
+    if (e && e.cancelable) e.preventDefault();
+    if (state.phase === "idle"){
+      state.phase = "enhancing";
+      state.score = 0;
+      state.holdPower = 1;
+      var luckRoll = Math.random();
+      state.runLuck = Math.max(0.15, Math.min(25, -Math.log(1-luckRoll*0.995) * 0.6));
+      state.timerStart = performance.now();
+      lastTime = state.timerStart;
+      timerPill.classList.add("show");
+      scoreDisplay.classList.add("show");
+      updateTimerDisplay(DURATION);
+      rafId = requestAnimationFrame(loop);
+    }
+    state.holding = true;
+    crystalBtn.classList.add("pressed");
+  }
+  function onRelease(){
+    if (state.phase !== "enhancing") return;
+    state.holding = false;
+    crystalBtn.classList.remove("pressed");
+  }
+
+  crystalBtn.addEventListener("pointerdown", onPress);
+  crystalBtn.addEventListener("pointerleave", onRelease);
+  window.addEventListener("pointerup", onRelease);
+  window.addEventListener("pointercancel", onRelease);
+  crystalBtn.addEventListener("contextmenu", function(e){ e.preventDefault(); });
+  crystalBtn.addEventListener("touchmove", function(e){ if (e.cancelable) e.preventDefault(); }, {passive:false});
+  crystalBtn.addEventListener("keydown", function(e){
+    if ((e.key === " " || e.key === "Enter") && !e.repeat){ e.preventDefault(); onPress(e); }
+  });
+  crystalBtn.addEventListener("keyup", function(e){
+    if (e.key === " " || e.key === "Enter"){ e.preventDefault(); onRelease(); }
+  });
+
+  function clearFx(){
+    eventBack.innerHTML = "";
+    eventFront.innerHTML = "";
+    activeEventCount = 0;
+    earthGoneUsed = false;
+  }
+
+  function finalize(){
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = null;
+    state.phase = "result";
+    state.holding = false;
+    crystalBtn.classList.remove("pressed");
+    crystalBtn.style.transform = "";
+    crystalBtn.style.opacity = "";
+    timerPill.classList.remove("show");
+    hypeLayer.style.transform = "";
+    clearFx();
+
+    var finalScore = Math.max(0, Math.floor(state.score));
+    var tierIndex = tierForScore(finalScore);
+    var tier = TIERS[tierIndex];
+
+    var best = loadBest();
+    if (finalScore > best){ saveBest(finalScore); }
+
+    var unlocked = loadUnlocked();
+    var isNew = !unlocked.has(tierIndex);
+    if (isNew){ unlocked.add(tierIndex); saveUnlocked(unlocked); }
+
+    showResult(tier, finalScore, isNew);
+  }
+
+  function showResult(tier, finalScore, isNew){
+    resultCrystalWrap.innerHTML = spriteMarkup(tier);
+    var svg = resultCrystalWrap.querySelector("svg");
+    svg.style.filter = "drop-shadow(0 0 " + tier.glow + "px hsla(" + tier.hue + ",80%,60%,0.55))";
+    if (tier.legendary && !REDUCE_MOTION){ svg.classList.add("legendarySpin"); }
+
+    resultName.textContent = tier.name;
+    resultScore.textContent = "도달 수치  " + finalScore.toLocaleString("ko-KR");
+    resultBadgeWrap.innerHTML = isNew ? '<span class="badge">새로운 종류 발견!</span>' : "";
+
+    resultModal.classList.add("open");
+  }
+
+  function closeResultModal(){
+    resultModal.classList.remove("open");
+  }
+  function resetGame(){
+    state.phase = "idle";
+    state.score = 0;
+    state.holdPower = 1;
+    state.holding = false;
+    state.timerStart = null;
+    scoreDisplay.classList.remove("show");
+    scoreDisplay.textContent = "";
+    stageEl.style.background = "";
+    crystalSvgEl.style.filter = "";
+    instructionText.textContent = ORIGINAL_INSTRUCTION;
+    instructionText.style.color = ""; instructionText.style.textShadow = ""; instructionText.style.fontWeight = "";
+    scoreDisplay.style.webkitTextStroke = "0"; scoreDisplay.style.textShadow = "";
+    refreshBestText();
+  }
+
+  resultCloseBtn.addEventListener("click", function(){ closeResultModal(); resetGame(); });
+  resultRetryBtn.addEventListener("click", function(){ closeResultModal(); resetGame(); });
+  resultDexBtn.addEventListener("click", function(){ renderDexGrid(); dexModal.classList.add("open"); });
+
+  /* ============ 도감 ============ */
+  var dexCache = {};
+  function dexSprite(tier, isUnlocked){
+    var k = tier.index + (isUnlocked ? "u" : "l");
+    if (!dexCache[k]){
+      dexCache[k] = spriteMarkup({hue:tier.hue, sat:tier.sat, light:tier.light, sparkles:0, seed:tier.seed,
+                  shape:tier.shape, bg:tier.bg, layers:tier.layers, blue:tier.blue, redEyes:tier.redEyes}, !isUnlocked);
+    }
+    return dexCache[k];
+  }
+  function renderDexGrid(){
+    var unlocked = loadUnlocked();
+    dexCountText.textContent = unlocked.size + " / " + TOTAL + " 수집";
+    var html = "";
+    for (var i=0;i<TIERS.length;i++){
+      var tier = TIERS[i];
+      var isUnlocked = unlocked.has(tier.index);
+      html += '<div class="dexCell' + (isUnlocked?'':' locked') + '">' +
+                '<div class="dexIcon">' + dexSprite(tier, isUnlocked) + '</div>' +
+                '<div class="dexName">' + (isUnlocked ? tier.name : "???") + '</div>' +
+                '<div class="dexNum">' + tier.threshold.toLocaleString("ko-KR") + '</div>' +
+              '</div>';
+    }
+    dexGrid.innerHTML = html;
+  }
+
+  openDexBtn.addEventListener("click", function(){ renderDexGrid(); dexModal.classList.add("open"); });
+  dexCloseBtn.addEventListener("click", function(){ dexModal.classList.remove("open"); });
+  [resultModal, dexModal].forEach(function(overlay){
+    overlay.addEventListener("click", function(e){
+      if (e.target === overlay){
+        overlay.classList.remove("open");
+        if (overlay === resultModal) resetGame();
+      }
+    });
+  });
+  document.addEventListener("keydown", function(e){
+    if (e.key === "Escape"){
+      if (resultModal.classList.contains("open")){ closeResultModal(); resetGame(); }
+      if (dexModal.classList.contains("open")){ dexModal.classList.remove("open"); }
+    }
+  });
+
+})();
+
+</script>
+</body>
+</html>
